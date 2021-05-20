@@ -86,7 +86,7 @@ final class JudoTests: XCTestCase {
                 """)
         }
 
-        for enc in ["ascii", "utf-8", "utf-16"] {
+        for enc in ["ascii", "utf-8"] { // , "utf-16"] {
             let randomString = UUID().uuidString
             let path = "\(mount)/tmp/file-\(enc).txt"
             XCTAssertEqual(randomString, try roundtripFile(path: path, string: randomString, encoding: enc).stringValue)
