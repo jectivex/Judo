@@ -5,6 +5,10 @@ import SwiftJS
 import MiscKit
 
 final class JudoTests: XCTestCase {
+//    func testInitDeinit() throws {
+//        let context = ScriptContext()
+//    }
+
     func testCallbackFunctions() throws {
         let context = ScriptContext()
 
@@ -31,14 +35,8 @@ final class JudoTests: XCTestCase {
 
         try ctx.installBrowserFS(mountPoint: "\(mount)")
 
-        func newStats(itemType: String = "null", size: String = "null", mode: String = "null", atime: String = "null", mtime: String = "null", ctime: String = "null") -> String {
-            "new fs.FS.Stats(\(itemType), \(size), \(mode), \(atime), \(mtime), \(ctime))"
-        }
-
         XCTAssertEqual("[object Object]", try ctx.eval(script: "new fs.FS.Stats()").stringValue)
         XCTAssertEqual("false", try ctx.eval(script: "new fs.FS.Stats().isDirectory()").stringValue)
-
-        XCTAssertEqual("[object Object]", try ctx.eval(script: newStats()).stringValue)
 
         XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('/').isDirectory()").boolValue)
         XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
@@ -88,7 +86,7 @@ final class JudoTests: XCTestCase {
                 """)
         }
 
-        for enc in ["ascii"] { // }, "utf-8", "utf-16"] {
+        for enc in ["ascii", "utf-8", "utf-16"] {
             let randomString = UUID().uuidString
             let path = "\(mount)/tmp/file-\(enc).txt"
             XCTAssertEqual(randomString, try roundtripFile(path: path, string: randomString, encoding: enc).stringValue)

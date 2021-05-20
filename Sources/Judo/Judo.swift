@@ -135,7 +135,7 @@ public extension ScriptContext {
                     }
                 }
             }
-            return ScriptObject(nullIn: self)
+            return ScriptObject(nullIn: ctx)
         }
 
         self.global["setTimeout"] = setTimeout
