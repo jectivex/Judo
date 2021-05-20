@@ -129,6 +129,7 @@ jobs:
         action: build
   ubuntu_swift_nightly:
     name: ${{ matrix.image }}
+    if: false
     container:
       image: docker://swiftlang/swift:${{ matrix.image }}
     runs-on: ubuntu-latest
@@ -152,8 +153,8 @@ jobs:
       with:
         action: test
   linux_swift_nightly:
-    if: false
     name: ${{ matrix.image }}
+    if: false
     container:
       image: docker://swiftlang/swift:${{ matrix.image }}
     runs-on: ubuntu-latest
