@@ -1,0 +1,34 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "BricBrac",
+        "repositoryURL": "https://github.com/glimpseio/BricBrac.git",
+        "state": {
+          "branch": "main",
+          "revision": "92447f2c02b62c373f60d8e76e684a645fcd570a",
+          "version": null
+        }
+      },
+      {
+        "package": "MiscKit",
+        "repositoryURL": "https://github.com/glimpseio/MiscKit.git",
+        "state": {
+          "branch": "main",
+          "revision": "d0648d9ec0e7f5be1c927e872a36635a4a5ed485",
+          "version": null
+        }
+      },
+      {
+        "package": "SwiftJS",
+        "repositoryURL": "https://github.com/jectivex/SwiftJS.git",
+        "state": {
+          "branch": "main",
+          "revision": "88d4382f01cd4fe2579388c7e1617bccee52af97",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
