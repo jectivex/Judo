@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [5.1-xenial, 5.1-bionic]
+        image: [5.3-xenial, 5.3-bionic]
     steps:
     - uses: actions/checkout@v1
       with:
