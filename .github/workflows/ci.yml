@@ -152,6 +152,7 @@ jobs:
       with:
         action: test
   linux_swift_nightly:
+    if: false
     name: ${{ matrix.image }}
     container:
       image: docker://swiftlang/swift:${{ matrix.image }}

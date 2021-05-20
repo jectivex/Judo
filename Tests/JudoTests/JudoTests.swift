@@ -52,7 +52,7 @@ final class JudoTests: XCTestCase {
                         fs.readFile('\(path)', '\(encoding)', function(err, contents) {
                             if (err != null) { throw err; }
                             if (typeof contents !== 'string') {
-                                throw "Written file has wrong type: " + typeof contents;
+                                throw "file contents have wrong type: " + typeof contents;
                             } else {
                                 contentString = contents;
                                 //console.info("initialized virtual file system:", contents.toString());
