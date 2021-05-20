@@ -1,3 +1,3 @@
-# KanjiVM
+# Judo
 
-A description of this package.
+Node-like APIs for SwiftJS
