@@ -27,7 +27,9 @@ final class JudoTests: XCTestCase {
         // must not have require for BrowserFS to install correctly
         // try ctx.trying { ctx.installExports(require: false) }
 
-        try ctx.installBrowserFS(mountPoint: "/sys/")
+        let mount = "/sys"
+
+        try ctx.installBrowserFS(mountPoint: "\(mount)")
 
         // write a random string to a temporary file, then read it back and see if it works
 
@@ -65,7 +67,7 @@ final class JudoTests: XCTestCase {
 
         for enc in ["ascii"] { // }, "utf-8", "utf-16"] {
             let randomString = UUID().uuidString
-            XCTAssertEqual(randomString, try roundtripFile(path: "/sys/tmp/file-\(enc).txt", string: randomString, encoding: enc).stringValue)
+            XCTAssertEqual(randomString, try roundtripFile(path: "\(mount)/tmp/file-\(enc).txt", string: randomString, encoding: enc).stringValue)
         }
     }
 }
