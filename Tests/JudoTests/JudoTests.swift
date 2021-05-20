@@ -31,6 +31,29 @@ final class JudoTests: XCTestCase {
 
         try ctx.installBrowserFS(mountPoint: "\(mount)")
 
+        func newStats(itemType: String = "null", size: String = "null", mode: String = "null", atime: String = "null", mtime: String = "null", ctime: String = "null") -> String {
+            "new fs.FS.Stats(\(itemType), \(size), \(mode), \(atime), \(mtime), \(ctime))"
+        }
+
+        XCTAssertEqual("[object Object]", try ctx.eval(script: "new fs.FS.Stats()").stringValue)
+        XCTAssertEqual("false", try ctx.eval(script: "new fs.FS.Stats().isDirectory()").stringValue)
+
+        XCTAssertEqual("[object Object]", try ctx.eval(script: newStats()).stringValue)
+
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('/').isDirectory()").boolValue)
+        XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
+
+        // this will return our own Stats impl…
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)').isDirectory()").boolValue)
+        XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('\(mount)/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
+
+        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isFile()").boolValue)
+        //XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isDirectory()").boolValue)
+
+        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isDirectory()").boolValue)
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isFile()").boolValue)
+
+
         // write a random string to a temporary file, then read it back and see if it works
 
         // TODO: test async/await like:
@@ -67,7 +90,8 @@ final class JudoTests: XCTestCase {
 
         for enc in ["ascii"] { // }, "utf-8", "utf-16"] {
             let randomString = UUID().uuidString
-            XCTAssertEqual(randomString, try roundtripFile(path: "\(mount)/tmp/file-\(enc).txt", string: randomString, encoding: enc).stringValue)
+            let path = "\(mount)/tmp/file-\(enc).txt"
+            XCTAssertEqual(randomString, try roundtripFile(path: path, string: randomString, encoding: enc).stringValue)
         }
     }
 }
