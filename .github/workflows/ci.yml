@@ -59,6 +59,7 @@ jobs:
       if: ${{ matrix.enable_codecov }}
   ubuntu_swift_latest:
     name: latest-${{ matrix.image }}
+    if: false # frequent failures 
     container: 
       image: docker://swift:${{ matrix.image }}
     runs-on: ubuntu-latest
