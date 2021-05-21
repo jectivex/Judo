@@ -300,6 +300,12 @@ private extension FileManager {
             throw err("third mode argument was not a number")
         }
 
+        //FileHandle(fileDescriptor: fd).closeFile()
+        if let handle = FileHandle(forReadingAtPath: p) {
+            // TODO: wrap Foundation.FileHandle in node's FileHandle (https://nodejs.org/api/fs.html#fs_class_filehandle)
+            handle.closeFile()
+        }
+
         throw err("Unsupported: openSync")
     }
 
@@ -311,17 +317,12 @@ private extension FileManager {
             throw err("first fname argument was not a string")
         }
 
-        guard !args.isEmpty else {
-            throw err("second encoding argument was not set")
-        }
-        let encoding: String? = args.removeFirst().stringValue
+        let encoding: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
 
-        guard !args.isEmpty, let flag = args.removeFirst().doubleValue else {
-            throw err("third flag argument was not a string")
-        }
+        let flag: Double? = args.isEmpty ? nil : args.removeFirst().doubleValue
 
-        if let encoding = encoding {
-            let contents = try String(contentsOfFile: fname, encoding: parseEncoding(from: encoding))
+        if let encoding = encoding, encoding.isString, let enc = encoding.stringValue {
+            let contents = try String(contentsOfFile: fname, encoding: parseEncoding(from: enc))
             return ScriptObject(string: contents, in: ctx)
         } else {
             let data = try Data(contentsOf: URL(fileURLWithPath: fname), options: [])
@@ -510,31 +511,48 @@ private extension FileManager {
             throw err("second data argument not a string or buffer")
         }
 
-        guard !args.isEmpty, let encoding = args.removeFirst().stringValue else {
-            throw err("third encoding argument was not a string")
-        }
+        let encoding: String? = args.isEmpty || !args[0].isString ? nil : args.removeFirst().stringValue
+        let flag: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
+        let mode: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
 
-        guard !args.isEmpty, let flag = args.removeFirst().doubleValue else {
-            throw err("fourth flag argument was not a number")
-        }
-
-        guard !args.isEmpty, let mode = args.removeFirst().doubleValue else {
-            throw err("fifth mode argument was not a number")
-        }
-
-        if data.isString, let str = data.stringValue {
+        if data.isString, let str = data.stringValue, let encoding = encoding {
             try str.write(toFile: fname, atomically: false, encoding: parseEncoding(from: encoding))
+        } else if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *), data.isArrayBuffer, let contents = data.copyBytes() {
+            try contents.write(to: URL(fileURLWithPath: fname))
+        } else {
+            throw JudoErrors.minimumSystemVersion
         }
         return ScriptObject(undefinedIn: ctx)
     }
 
-    private static func parseEncoding(from encodingString: String) -> String.Encoding {
-        switch encodingString.lowercased() {
-        case "utf8", "utf-8": return .utf8
-        case "utf16", "utf-16": return .utf16
-        case "utf32", "utf-32": return .utf32
-        case "ascii": return .ascii
-        default: return .utf8
+    private static func parseEncoding(from encodingName: String) throws -> String.Encoding {
+        switch encodingName.lowercased() {
+        case "utf8", "utf-8":
+            return String.Encoding.utf8
+        case "ascii", "us-ascii":
+            return String.Encoding.ascii
+        case "iso-8859-1", "iso_8859-1":
+            return String.Encoding.isoLatin1
+        case "iso-8859-2", "iso_8859-2":
+            return String.Encoding.isoLatin2
+        case "windows-1250", "cp1250", "cp-1250", "1250":
+            return String.Encoding.windowsCP1250
+        case "windows-1251", "cp1251", "cp-1251", "1251":
+            return String.Encoding.windowsCP1251
+        case "windows-1252", "cp1252", "cp-1252", "1252":
+            return String.Encoding.windowsCP1252
+        case "windows-1253", "cp1253", "cp-1253", "1253":
+            return String.Encoding.windowsCP1253
+        case "windows-1254", "cp1254", "cp-1254", "1254":
+            return String.Encoding.windowsCP1254
+        case "macintosh", "mac":
+            return String.Encoding.macOSRoman
+        case "utf61", "utf-16":
+            return String.Encoding.utf16
+        case "utf32", "utf-32":
+            return String.Encoding.utf32
+        default:
+            throw JudoErrors.invalidEncoding(encodingName)
         }
     }
 }

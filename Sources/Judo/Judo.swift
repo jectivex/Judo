@@ -2,9 +2,16 @@ import SwiftJS
 import MiscKit
 
 public enum JudoErrors : Error {
+    /// The URL could not be found in the resources
     case cannotLoadScriptURL
+    /// An evanuation error occurred
     case evaluationErrorString(String)
+    /// An evanuation error occurred
     case evaluationError(ScriptObject)
+    /// The specified encoding name is invalid
+    case invalidEncoding(String)
+    /// The API call requires a higher system version (e.g., for JS type array support)
+    case minimumSystemVersion
 }
 
 public extension ScriptContext {

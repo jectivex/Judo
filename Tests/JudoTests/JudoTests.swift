@@ -107,7 +107,7 @@ final class JudoTests: XCTestCase {
 
         for sync in [true, false] { // try with both the sync and non-sync APIs
             let uniq = UUID().uuidString
-            for enc in ["ascii", "utf-8"] { // , "utf-16"] { // utf16 fails on linux!
+            for enc in ["ascii", "utf-8", "utf-16", "utf-32"] { // utf16 fails on linux!
                 let randomString = (1...Int.random(in: 1...10)).map({ _ in UUID().uuidString }).joined(separator: "")
                 let relpath = "/tmp/testfile-\(uniq)-\(enc).txt"
                 let path = "\(mount)\(relpath)"
@@ -119,12 +119,16 @@ final class JudoTests: XCTestCase {
                 XCTAssertNoThrow(try ctx.eval(script: "fs.statSync('\(path)').isFile()"))
                 XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(path)').isFile()").boolValue)
 
+                let data = try XCTUnwrap(try ctx.eval(script: "fs.readFileSync('\(path)')").copyBytes())
+
                 XCTAssertTrue(fm.fileExists(atPath: relpath))
                 let attrs = try fm.attributesOfItem(atPath: relpath)
 
                 do { // check that stat's size is correct
                     let size = try XCTUnwrap(attrs[.size] as? Int)
                     let jsize = try XCTUnwrap(try ctx.eval(script: "fs.statSync('\(path)').size").doubleValue)
+
+                    XCTAssertEqual(data.count, size)
 
                     XCTAssertEqual(size, .init(jsize))
                 }
