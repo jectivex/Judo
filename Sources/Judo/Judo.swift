@@ -5,44 +5,12 @@ public enum JudoErrors : Error {
     /// The URL could not be found in the resources
     case cannotLoadScriptURL
     /// An evanuation error occurred
-    case evaluationErrorString(String)
-    /// An evanuation error occurred
     case evaluationError(ScriptObject)
     /// The specified encoding name is invalid
     case invalidEncoding(String)
-    /// The API call requires a higher system version (e.g., for JS type array support)
-    case minimumSystemVersion
 }
 
 public extension ScriptContext {
-    /// Runs the script at the given URL.
-    /// - Parameter url: the URL from which to run the script
-    /// - Throws: an error if one occurs
-    @discardableResult func eval(url: URL) throws -> ScriptObject {
-        try eval(script: String(contentsOf: url, encoding: .utf8), url: url)
-    }
-
-    @discardableResult func eval(script: String, url: URL? = nil) throws -> ScriptObject {
-        try trying {
-            evaluateScript(script, this: nil, withSourceURL: url, startingLineNumber: 0)
-        }
-    }
-
-    /// Tries to execute the given operation, and throws any exceptions that may exists
-    func trying<T>(operation: () throws -> T) throws -> T {
-        let result = try operation()
-        if let error = self.exception {
-            defer { self.exception = nil }
-            if let string = error.stringValue {
-                throw JudoErrors.evaluationErrorString(string)
-            } else {
-                throw JudoErrors.evaluationError(error)
-            }
-        }
-        return result
-    }
-
-
     /// Installs a top-level "global" variable.
     func installExports(require: Bool) {
         if self.global["exports"].isObject == false {

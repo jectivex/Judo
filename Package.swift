@@ -12,13 +12,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/jectivex/SwiftJS.git", .branch("main")),
-        .package(url: "https://github.com/glimpseio/BricBrac.git", .branch("main")),
         .package(url: "https://github.com/glimpseio/MiscKit.git", .branch("main")),
     ],
     targets: [
         .target(
             name: "Judo",
-            dependencies: ["MiscKit", "BricBrac", "SwiftJS"],
+            dependencies: ["MiscKit", "SwiftJS"],
             resources: [.copy("Resources")]),
         .testTarget(
             name: "JudoTests",

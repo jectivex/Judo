@@ -527,7 +527,7 @@ private extension FileManager {
         } else if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *), data.isArrayBuffer, let contents = data.copyBytes() {
             try contents.write(to: URL(fileURLWithPath: fname))
         } else {
-            throw JudoErrors.minimumSystemVersion
+            throw ScriptContext.Errors.minimumSystemVersion
         }
         return ScriptObject(undefinedIn: ctx)
     }
