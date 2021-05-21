@@ -107,7 +107,12 @@ final class JudoTests: XCTestCase {
 
         for sync in [true, false] { // try with both the sync and non-sync APIs
             let uniq = UUID().uuidString
-            for enc in ["ascii", "utf-8", "utf-16", "utf-32"] { // utf16 fails on linux!
+            var encodings = ["ascii", "utf-8"]
+            #if !os(Linux)
+            encodings.append(contentsOf: ["utf-16", "utf-32"]) // utf16 & 32 fails on linux!
+            #endif
+
+            for enc in encodings {
                 let randomString = (1...Int.random(in: 1...10)).map({ _ in UUID().uuidString }).joined(separator: "")
                 let relpath = "/tmp/testfile-\(uniq)-\(enc).txt"
                 let path = "\(mount)\(relpath)"
