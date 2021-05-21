@@ -59,6 +59,7 @@ jobs:
       if: ${{ matrix.enable_codecov }}
   ubuntu_swift_latest:
     name: latest-${{ matrix.image }}
+    if: false # BricBrac not building on latest
     container: 
       image: docker://swift:${{ matrix.image }}
     runs-on: ubuntu-latest
@@ -82,6 +83,7 @@ jobs:
         action: test
   linux_swift_latest:
     name: latest-${{ matrix.image }}
+    if: false # BricBrac not building on latest
     container: 
       image: docker://swift:${{ matrix.image }}
     runs-on: ubuntu-latest
