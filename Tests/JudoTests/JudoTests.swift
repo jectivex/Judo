@@ -5,6 +5,8 @@ import SwiftJS
 import MiscKit
 
 final class JudoTests: XCTestCase {
+    let fm = FileManager.default
+
 //    func testInitDeinit() throws {
 //        let context = ScriptContext()
 //    }
@@ -38,6 +40,10 @@ final class JudoTests: XCTestCase {
         XCTAssertEqual("[object Object]", try ctx.eval(script: "new fs.FS.Stats()").stringValue)
         XCTAssertEqual("false", try ctx.eval(script: "new fs.FS.Stats().isDirectory()").stringValue)
 
+        func fstat(path: String, mnt: Bool) throws -> ScriptObject {
+            try ctx.eval(script: "fs.statSync('\(mnt ? mount : "")\(path)').isDirectory()")
+        }
+
         XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('/').isDirectory()").boolValue)
         XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
 
@@ -63,8 +69,20 @@ final class JudoTests: XCTestCase {
             await xxx();
         */
 
-        func roundtripFile(path: String, string: String, encoding: String) throws -> ScriptObject {
-            try ctx.eval(script: """
+        func roundtripFile(sync: Bool, path: String, string: String, encoding: String) throws -> ScriptObject {
+            if sync {
+                return try ctx.eval(script: """
+                (function() {
+                    fs.writeFileSync('\(path)', '\(string)', '\(encoding)');
+                    const contentString = fs.readFileSync('\(path)', '\(encoding)');
+                    if (typeof contentString !== 'string') {
+                        throw "file contents have wrong type: " + typeof contents;
+                    }
+                    return contentString;
+                })();
+                """)
+            } else {
+                return try ctx.eval(script: """
                 (function() {
                     let contentString = '';
                     let error = null;
@@ -84,12 +102,40 @@ final class JudoTests: XCTestCase {
                     return contentString;
                 })();
                 """)
+            }
         }
 
-        for enc in ["ascii", "utf-8"] { // , "utf-16"] {
-            let randomString = UUID().uuidString
-            let path = "\(mount)/tmp/file-\(enc).txt"
-            XCTAssertEqual(randomString, try roundtripFile(path: path, string: randomString, encoding: enc).stringValue)
+        for sync in [true, false] { // try with both the sync and non-sync APIs
+            let uniq = UUID().uuidString
+            for enc in ["ascii", "utf-8"] { // , "utf-16"] { // utf16 fails on linux!
+                let randomString = (1...Int.random(in: 1...10)).map({ _ in UUID().uuidString }).joined(separator: "")
+                let relpath = "/tmp/testfile-\(uniq)-\(enc).txt"
+                let path = "\(mount)\(relpath)"
+
+                XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('\(path)').isFile()"))
+
+                XCTAssertEqual(randomString, try roundtripFile(sync: sync, path: path, string: randomString, encoding: enc).stringValue)
+
+                XCTAssertNoThrow(try ctx.eval(script: "fs.statSync('\(path)').isFile()"))
+                XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(path)').isFile()").boolValue)
+
+                XCTAssertTrue(fm.fileExists(atPath: relpath))
+                let attrs = try fm.attributesOfItem(atPath: relpath)
+
+                do { // check that stat's size is correct
+                    let size = try XCTUnwrap(attrs[.size] as? Int)
+                    let jsize = try XCTUnwrap(try ctx.eval(script: "fs.statSync('\(path)').size").doubleValue)
+
+                    XCTAssertEqual(size, .init(jsize))
+                }
+
+                do { // check that stat's mtime is (about) correct
+                    let mtime = try XCTUnwrap(attrs[.modificationDate] as? Date)
+                    let jmtime = try XCTUnwrap(try ctx.eval(script: "fs.statSync('\(path)').mtime").dateValue)
+
+                    XCTAssertEqual(mtime.timeIntervalSince1970, jmtime.timeIntervalSince1970, accuracy: 0.1)
+                }
+            }
         }
     }
 }

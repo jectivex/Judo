@@ -89,7 +89,7 @@ public extension ScriptContext {
     /// Installs `setTimeout` to use `DispatchQueue.global.asyncAfter`
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
-    func installTimer() {
+    func installTimer(immediate: Bool = wip(false)) {
         let setTimeout = ScriptObject(newFunctionIn: self) { ctx, this, arguments in
             var args = arguments
             if args.count < 1 {
@@ -119,7 +119,11 @@ public extension ScriptContext {
 
                 globalTimers[globalTimerCount] = item
 
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(Int(t)), execute: item)
+//                if t <= 0 {
+//                    item.perform()
+//                } else {
+                    DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(Int(t)), execute: item)
+//                }
             }
 
 
@@ -140,6 +144,10 @@ public extension ScriptContext {
 
         self.global["setTimeout"] = setTimeout
         self.global["clearTimeout"] = clearTimeout
+
+        if immediate {
+            self.global["setImmediate"] = setTimeout
+        }
     }
 }
 

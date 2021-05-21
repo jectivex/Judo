@@ -428,14 +428,14 @@ private extension FileManager {
         let mtime = (attrs[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0.0
         let ctime = (attrs[.creationDate] as? Date)?.timeIntervalSince1970 ?? 0.0
 
-        dbg(wip("stat"), p, "type:", itemType, "size:", size, "mode:", mode, "atime:", atime, "mtime:", mtime) // , "ctime:", ctime)
+        //dbg("stat", p, "type:", itemType, "size:", size, "mode:", mode, "atime:", atime, "mtime:", mtime) // , "ctime:", ctime)
 
         array[0] = ScriptObject(double: Double(itemType?.rawValue ?? 0), in: ctx)
         array[1] = ScriptObject(double: size, in: ctx)
         array[2] = ScriptObject(double: mode, in: ctx)
-        array[3] = ScriptObject(double: atime, in: ctx)
-        array[4] = ScriptObject(double: mtime, in: ctx)
-        array[5] = ScriptObject(double: ctime, in: ctx)
+        array[3] = ScriptObject(double: atime * 1000.0, in: ctx)
+        array[4] = ScriptObject(double: mtime * 1000.0, in: ctx)
+        array[5] = ScriptObject(double: ctime * 1000.0, in: ctx)
         return array
     }
 
