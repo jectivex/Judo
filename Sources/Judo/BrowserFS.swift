@@ -321,11 +321,11 @@ private extension FileManager {
 
         let flag: Double? = args.isEmpty ? nil : args.removeFirst().doubleValue
 
+        let data = try Data(contentsOf: URL(fileURLWithPath: fname), options: [])
         if let encoding = encoding, encoding.isString, let enc = encoding.stringValue {
-            let contents = try String(contentsOfFile: fname, encoding: parseEncoding(from: enc))
+            let contents = try String(data: data, encoding: parseEncoding(from: enc))
             return ScriptObject(string: contents, in: ctx)
         } else {
-            let data = try Data(contentsOf: URL(fileURLWithPath: fname), options: [])
             if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *) {
                 return ScriptObject(newArrayBufferWithBytes: data, in: ctx)
             } else {
@@ -342,8 +342,6 @@ private extension FileManager {
             throw err("first argument was not a string")
         }
         let files = try FileManager.default.contentsOfDirectory(atPath: p)
-
-        dbg("### returning", wip(files))
 
         var array = ScriptObject(newArrayIn: ctx)
         for (index, path) in files.enumerated() {
@@ -395,7 +393,14 @@ private extension FileManager {
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
         }
-        try FileManager.default.removeItem(atPath: p)
+
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: p, isDirectory: &isDir) && isDir.boolValue == true {
+            try FileManager.default.removeItem(atPath: p)
+        } else {
+            throw err("path is not a directory")
+        }
+
         return ScriptObject(undefinedIn: ctx)
     }
 
