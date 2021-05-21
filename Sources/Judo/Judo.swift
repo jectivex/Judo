@@ -1,4 +1,5 @@
 import SwiftJS
+import BricBrac
 import MiscKit
 
 public enum JudoErrors : Error {

@@ -3,7 +3,6 @@ import XCTest
 
 import SwiftJS
 import MiscKit
-import BricBrac
 
 final class JudoTests: XCTestCase {
     let res = Bundle.module.resourceURL
@@ -164,19 +163,25 @@ final class JudoTests: XCTestCase {
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils").isObject)
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
 
-        func parseSheet(data: Data, opts: SheetJS.ParsingOptions = SheetJS.ParsingOptions(type: .buffer)) throws -> ScriptObject {
+        func parseSheet(data: Data, readopts: SheetJS.ParsingOptions = SheetJS.ParsingOptions(type: .buffer)) throws -> ScriptObject {
             ctx["buffer"] = ScriptObject(newArrayBufferWithBytes: data, in: ctx)
             defer { ctx["buffer"] = ScriptObject(undefinedIn: ctx) }
-            ctx["opts"] = try ScriptObject(json: opts.encodedString(), in: ctx)
-            defer { ctx["opts"] = ScriptObject(undefinedIn: ctx) }
+            ctx["readopts"] = try ScriptObject(json: readopts.encodedString(), in: ctx)
+            defer { ctx["readopts"] = ScriptObject(undefinedIn: ctx) }
+
+            let jsonopts: Bric = [
+                "header": 1 // i.e., output AOAs
+            ]
+            ctx["jsonopts"] = try ScriptObject(json: jsonopts.encodedString(), in: ctx)
+            defer { ctx["jsonopts"] = ScriptObject(undefinedIn: ctx) }
 
             let sheet = try ctx.eval(script: """
             (function() {
-                const workbook = XLSX.read(buffer, opts);
+                const workbook = XLSX.read(buffer, readopts);
                 return workbook.SheetNames.map(sheetName => {
                     return {
-                        sheetName: sheetName,
-                        data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
+                        name: sheetName,
+                        data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], jsonopts)
                     };
                 });
             })()
@@ -185,40 +190,66 @@ final class JudoTests: XCTestCase {
             return sheet
         }
 
-        guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: "xls", subdirectory: "Resources/sheets") else {
-            return XCTFail("could not load demo.xls")
+        for ext in ["xls", "xlsx"] {
+            guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
+                return XCTFail("could not load demo.\(ext)")
+            }
+
+            let json = try parseSheet(data: try Data(contentsOf: demoURL)).toBric() ?? .nul
+
+            let xls: Bric = [
+                ["name":"Sheet1",
+                 "data": [
+                    ["Column A","Column B","Column C","Column D","Column E"],
+                    [1,"A",5.1,"black",11.2],
+                    [2,"B",9.4334,"red",20.8668],
+                    [3,"C",4.323,"white",11.646],
+                    [4,"D",2.33,"grey",8.66],
+                    [5,"E",1.11,"green",7.220000000000001],
+                    [6,"F",3.2,"blue",12.4],
+                    [7,"G",9.99,"yellow",26.98],
+                    [8,"H",8.32,"orangle",24.64],
+                    [9,"I",1024.1,"purple",2057.2],
+                    [10,"J",22,"maroon",54]
+                 ]],
+                ["name":"Sheet3",
+                 "data":[
+                    ["COL1","COL2"],
+                    ["XXX","YYY"]
+                 ]],
+                ["name":"Sheet4",
+                 "data":[
+                    ["AAA","BBB","CCC"],
+                    [nil,"DDD","EEE","FFF"],
+                    [nil,nil,"GGG","HHH","III"],
+                    [nil,nil,nil,1,2,3]
+                 ]]
+            ]
+
+            let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"],[1,"A",5.1,"black"],[2,"B",9.4334,"red"],[3,"C",4.323,"white"],[4,"D",2.33,"grey"],[5,"E",1.11,"green"],[6,"F",3.2,"blue"],[7,"G",9.99,"yellow"],[8,"H",8.32,"orangle"],[9,"I",1024.1,"purple"],[10,"J",22,"maroon"]]]]
+
+            XCTAssertEqual(json, ext == "xlsx" ? xlsx : xls)
         }
-
-
-        let json = try parseSheet(data: try Data(contentsOf: demoURL)).toBric() ?? .nul
-
-        XCTAssertEqual(json, [
-            ["sheetName":"Sheet1","data":[
-                ["Column E":11.2,"Column C":5.1,"Column B":"A","Column A":1,"Column D":"black"],
-                ["Column E":20.8668,"Column D":"red","Column A":2,"Column B":"B","Column C":9.4334],
-                ["Column E":11.646,"Column D":"white","Column A":3,"Column B":"C","Column C":4.323],
-                ["Column E":8.66,"Column D":"grey","Column A":4,"Column B":"D","Column C":2.33],
-                ["Column D":"green","Column B":"E","Column A":5,"Column C":1.11,"Column E":7.220000000000001],
-                ["Column D":"blue","Column B":"F","Column A":6,"Column C":3.2,"Column E":12.4],
-                ["Column C":9.99,"Column A":7,"Column E":26.98,"Column D":"yellow","Column B":"G"],
-                ["Column D":"orangle","Column B":"H","Column A":8,"Column C":8.32,"Column E":24.64],
-                ["Column A":9,"Column D":"purple","Column B":"I","Column C":1024.1,"Column E":2057.2],
-                ["Column D":"maroon","Column B":"J","Column A":10,"Column C":22,"Column E":54]]],
-          ["sheetName":"Sheet3","data":[
-                ["COL2":"YYY","COL1":"XXX"]]],
-          ["sheetName":"Sheet4","data":[
-                ["BBB":"DDD","CCC":"EEE","__EMPTY":"FFF"],
-                ["__EMPTY_1":"III","__EMPTY":"HHH","CCC":"GGG"],
-                ["__EMPTY_1":2,"__EMPTY":1,"__EMPTY_2":3]]]] as Bric)
     }
 }
 
 
 public extension ScriptContext {
     static let sheetjs = Bundle.module.url(forResource: "xlsx", withExtension: "js", subdirectory: "Resources/JavaScript")
+    static let jszipjs = Bundle.module.url(forResource: "jszip", withExtension: "js", subdirectory: "Resources/JavaScript")
+
+    /// Runs `jszip.js` to set up JSZip.
+    func installJSZip() throws {
+        guard let jszipjsURL = Self.jszipjs else {
+            throw JudoErrors.cannotLoadScriptURL
+        }
+        try self.eval(url: jszipjsURL)
+    }
 
     /// Runs `xlsx.js` to set up the VM.
     func installSheetJS() throws {
+        try installJSZip()
+
         guard let sheetjsURL = Self.sheetjs else {
             throw JudoErrors.cannotLoadScriptURL
         }
