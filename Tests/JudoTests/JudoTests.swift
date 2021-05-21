@@ -190,7 +190,7 @@ final class JudoTests: XCTestCase {
             return sheet
         }
 
-        for ext in ["xls", "xlsx"] {
+        for ext in ["xls", "xlsx" /*, "csv" */] { // csv not yet working
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
@@ -228,7 +228,9 @@ final class JudoTests: XCTestCase {
 
             let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"],[1,"A",5.1,"black"],[2,"B",9.4334,"red"],[3,"C",4.323,"white"],[4,"D",2.33,"grey"],[5,"E",1.11,"green"],[6,"F",3.2,"blue"],[7,"G",9.99,"yellow"],[8,"H",8.32,"orangle"],[9,"I",1024.1,"purple"],[10,"J",22,"maroon"]]]]
 
-            XCTAssertEqual(json, ext == "xlsx" ? xlsx : xls)
+            let csv: Bric = [["name":"","data":[["A", "B", "C"], [1, true, "xyz,abc"]]]]
+
+            XCTAssertEqual(json, ext == "csv" ? csv : ext == "xlsx" ? xlsx : xls)
         }
     }
 }
