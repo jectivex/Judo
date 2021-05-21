@@ -323,7 +323,9 @@ private extension FileManager {
 
         let data = try Data(contentsOf: URL(fileURLWithPath: fname), options: [])
         if let encoding = encoding, encoding.isString, let enc = encoding.stringValue {
-            let contents = try String(data: data, encoding: parseEncoding(from: enc))
+            guard let contents = try String(data: data, encoding: parseEncoding(from: enc)) else {
+                throw err("Unable to load string with encoding \(enc)")
+            }
             return ScriptObject(string: contents, in: ctx)
         } else {
             if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *) {
