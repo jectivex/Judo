@@ -163,15 +163,12 @@ final class JudoTests: XCTestCase {
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils").isObject)
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
 
-        func parseSheet(data: Data, readopts: SheetJS.ParsingOptions = SheetJS.ParsingOptions(type: .buffer)) throws -> ScriptObject {
+        func parseSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> ScriptObject {
             ctx["buffer"] = ScriptObject(newArrayBufferWithBytes: data, in: ctx)
             defer { ctx["buffer"] = ScriptObject(undefinedIn: ctx) }
             ctx["readopts"] = try ScriptObject(json: readopts.encodedString(), in: ctx)
             defer { ctx["readopts"] = ScriptObject(undefinedIn: ctx) }
 
-            let jsonopts: Bric = [
-                "header": 1 // i.e., output AOAs
-            ]
             ctx["jsonopts"] = try ScriptObject(json: jsonopts.encodedString(), in: ctx)
             defer { ctx["jsonopts"] = ScriptObject(undefinedIn: ctx) }
 
@@ -190,12 +187,12 @@ final class JudoTests: XCTestCase {
             return sheet
         }
 
-        for ext in ["xls", "xlsx" /*, "csv" */] { // csv not yet working
+        for ext in ["xls", "xlsx", "csv"] {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
 
-            let json = try parseSheet(data: try Data(contentsOf: demoURL)).toBric() ?? .nul
+            let json = try parseSheet(data: try Data(contentsOf: demoURL), readopts: SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)).toBric() ?? .nul
 
             let xls: Bric = [
                 ["name":"Sheet1",
@@ -228,7 +225,7 @@ final class JudoTests: XCTestCase {
 
             let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"],[1,"A",5.1,"black"],[2,"B",9.4334,"red"],[3,"C",4.323,"white"],[4,"D",2.33,"grey"],[5,"E",1.11,"green"],[6,"F",3.2,"blue"],[7,"G",9.99,"yellow"],[8,"H",8.32,"orangle"],[9,"I",1024.1,"purple"],[10,"J",22,"maroon"]]]]
 
-            let csv: Bric = [["name":"","data":[["A", "B", "C"], [1, true, "xyz,abc"]]]]
+            let csv: Bric = [["data":[["A","B","C"],[1,"true","'xyz","abc'"]],"name":"Sheet1"]]
 
             XCTAssertEqual(json, ext == "csv" ? csv : ext == "xlsx" ? xlsx : xls)
         }
@@ -273,6 +270,38 @@ public final class SheetJS {
 
         try ctx.installBrowserFS(mountPoint: mnt)
         try ctx.installSheetJS()
+
+    }
+
+    /// https://github.com/sheetjs/sheetjs#json
+    public struct JSONOptions : Hashable, Codable {
+        /// Use raw values (true) or formatted strings (false)
+        public var raw: Bool?
+
+        /// Override Range (see table below)
+        public var range: Int?
+
+        /// Control output format
+        ///
+        /// header is expected to be one of:
+        ///
+        /// • 1: Generate an array of arrays ("2D Array")
+        ///
+        /// • "A": Row object keys are literal column labels
+        ///
+        /// • array of strings: Use specified strings as keys in row objects
+        ///
+        /// • (default): Read and disambiguate first row as keys
+        public var header: Bric?
+
+        /// Use specified date format in string output
+        public var dateNF: String?
+
+        /// Use specified value in place of null or undefined
+        public var defval: Bric?
+
+        /// Include blank lines in the output **
+        public var blankrows: Bool?
 
     }
 
