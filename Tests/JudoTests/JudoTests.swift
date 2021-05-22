@@ -164,12 +164,14 @@ final class JudoTests: XCTestCase {
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
 
 
-        for ext in ["xls", "xlsx", "csv"] {
+        for ext in ["xls", "xlsx", "csv", "html"] {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
 
-            let json = try SheetJS.shared.get().parseSheet(data: try Data(contentsOf: demoURL), readopts: SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)).toBric() ?? .nul
+            let ropts = SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)
+
+            let json = try SheetJS.shared.get().parseSheet(data: try Data(contentsOf: demoURL), readopts: ropts).toBric() ?? .nul
 
             let xls: Bric = [
                 ["name":"Sheet1",
@@ -200,11 +202,19 @@ final class JudoTests: XCTestCase {
                  ]]
             ]
 
-            let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"],[1,"A",5.1,"black"],[2,"B",9.4334,"red"],[3,"C",4.323,"white"],[4,"D",2.33,"grey"],[5,"E",1.11,"green"],[6,"F",3.2,"blue"],[7,"G",9.99,"yellow"],[8,"H",8.32,"orangle"],[9,"I",1024.1,"purple"],[10,"J",22,"maroon"]]]]
+            let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"], [1,"A",5.1,"black"], [2,"B",9.4334,"red"], [3,"C",4.323,"white"], [4,"D",2.33,"grey"], [5,"E",1.11,"green"], [6,"F",3.2,"blue"], [7,"G",9.99,"yellow"], [8,"H",8.32,"orangle"], [9,"I",1024.1,"purple"], [10,"J",22,"maroon"]]]]
 
-            let csv: Bric = [["data":[["A","B","C"],[1,"true","'xyz","abc'"]],"name":"Sheet1"]]
+            let csv: Bric = [["data":[["A","B","C"], [1,"true","'xyz","abc'"]],"name":"Sheet1"]]
 
-            XCTAssertEqual(json, ext == "csv" ? csv : ext == "xlsx" ? xlsx : xls)
+            let html: Bric = [ ["name":"Sheet1","data":[["Years","CBR","Years","CBR"], ["1950–1955",36.9,"2000–2005",21], ["1955–1960",35.4,"2005–2010",20.3], ["1960–1965",35.2,"2010–2015",19.5], ["1965–1970",34,"2015–2020",18.5], ["1970–1975",31.4,"2020–2025",17.5], ["1975–1980",28.5,"2025–2030",16.6], ["1980–1985",27.7,"2030–2035",16], ["1985–1990",27.4,"2035–2040",15.5], ["1990–1995",24.2,"2040–2045",15], ["1995–2000",22.2,"2045–2050",14.6]]]]
+
+            let expected = ext == "csv" ? csv
+                : ext == "html" ? html
+                : ext == "xlsx" ? xlsx
+                : ext == "xls" ? xls
+                : Bric.nul
+
+            XCTAssertEqual(json, expected)
         }
     }
 }

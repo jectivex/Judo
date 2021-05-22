@@ -311,7 +311,7 @@ private extension FileManager {
 
     /// ```readFileSync(fname: string, encoding: string | null, flag: FileFlag): any;```
     static let readFileSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
-        dbg("readFileSync", args)
+        //dbg("readFileSync", args)
         var args = args
         guard !args.isEmpty, let fname = args.removeFirst().stringValue else {
             throw err("first fname argument was not a string")
@@ -338,7 +338,7 @@ private extension FileManager {
 
     /// ```readdirSync(p: string): string[];```
     static let readdirSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
-        dbg("readdirSync", args)
+        //dbg("readdirSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
@@ -354,7 +354,7 @@ private extension FileManager {
 
     /// ```readlinkSync(p: string): string;```
     static let readlinkSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
-        dbg("readlinkSync", args)
+        //dbg("readlinkSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
@@ -408,7 +408,7 @@ private extension FileManager {
 
     /// ```statSync(p: string, isLstat: boolean | null): Stats;```
     static let statSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
-        dbg("statSync", args)
+        //dbg("statSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
@@ -505,7 +505,7 @@ private extension FileManager {
 
     /// ```writeFileSync(fname: string, data: string | Buffer, encoding: string | null, flag: FileFlag, mode: number): void;```
     static let writeFileSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
-        dbg("writeFileSync", args)
+        //dbg("writeFileSync", args)
         var args = args
         guard !args.isEmpty, let fname = args.removeFirst().stringValue else {
             throw err("first fname argument was not a string")
