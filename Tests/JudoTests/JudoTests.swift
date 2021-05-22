@@ -163,36 +163,13 @@ final class JudoTests: XCTestCase {
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils").isObject)
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
 
-        func parseSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> ScriptObject {
-            ctx["buffer"] = ScriptObject(newArrayBufferWithBytes: data, in: ctx)
-            defer { ctx["buffer"] = ScriptObject(undefinedIn: ctx) }
-            ctx["readopts"] = try ScriptObject(json: readopts.encodedString(), in: ctx)
-            defer { ctx["readopts"] = ScriptObject(undefinedIn: ctx) }
-
-            ctx["jsonopts"] = try ScriptObject(json: jsonopts.encodedString(), in: ctx)
-            defer { ctx["jsonopts"] = ScriptObject(undefinedIn: ctx) }
-
-            let sheet = try ctx.eval(script: """
-            (function() {
-                const workbook = XLSX.read(buffer, readopts);
-                return workbook.SheetNames.map(sheetName => {
-                    return {
-                        name: sheetName,
-                        data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], jsonopts)
-                    };
-                });
-            })()
-            """)
-
-            return sheet
-        }
 
         for ext in ["xls", "xlsx", "csv"] {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
 
-            let json = try parseSheet(data: try Data(contentsOf: demoURL), readopts: SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)).toBric() ?? .nul
+            let json = try SheetJS.shared.get().parseSheet(data: try Data(contentsOf: demoURL), readopts: SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)).toBric() ?? .nul
 
             let xls: Bric = [
                 ["name":"Sheet1",
@@ -273,13 +250,44 @@ public final class SheetJS {
 
     }
 
+    public func parseSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> ScriptObject {
+        ctx["buffer"] = ScriptObject(newArrayBufferWithBytes: data, in: ctx)
+        defer { ctx["buffer"] = ScriptObject(undefinedIn: ctx) }
+        ctx["readopts"] = try ScriptObject(json: readopts.encodedString(), in: ctx)
+        defer { ctx["readopts"] = ScriptObject(undefinedIn: ctx) }
+
+        ctx["jsonopts"] = try ScriptObject(json: jsonopts.encodedString(), in: ctx)
+        defer { ctx["jsonopts"] = ScriptObject(undefinedIn: ctx) }
+
+        let sheet = try ctx.eval(script: """
+        (function() {
+            const workbook = XLSX.read(buffer, readopts);
+            return workbook.SheetNames.map(sheetName => {
+                return {
+                    name: sheetName,
+                    data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], jsonopts)
+                };
+            });
+        })()
+        """)
+
+        return sheet
+    }
+
+
     /// https://github.com/sheetjs/sheetjs#json
     public struct JSONOptions : Hashable, Codable {
         /// Use raw values (true) or formatted strings (false)
         public var raw: Bool?
 
         /// Override Range (see table below)
-        public var range: Int?
+        ///
+        /// • (number): Use worksheet range but set starting row to the value
+        ///
+        /// • (string): Use specified range (A1-style bounded range string)
+        ///
+        /// • (default): Use worksheet range (ws['!ref'])
+        public var range: Bric?
 
         /// Control output format
         ///
@@ -295,13 +303,23 @@ public final class SheetJS {
         public var header: Bric?
 
         /// Use specified date format in string output
-        public var dateNF: String?
+        public var dateNF: Bric?
 
         /// Use specified value in place of null or undefined
         public var defval: Bric?
 
         /// Include blank lines in the output **
         public var blankrows: Bool?
+
+        public init(raw: Bool? = nil, range: Bric? = nil, header: Bric? = nil, dateNF: Bric? = nil, defval: Bric? = nil, blankrows: Bool? = nil) {
+            self.raw = raw
+            self.range = range
+            self.header = header
+            self.dateNF = dateNF
+            self.defval = defval
+            self.blankrows = blankrows
+        }
+
 
     }
 
@@ -367,6 +385,32 @@ public final class SheetJS {
             /// string: path of file that will be read (nodejs only)
             case file
         }
+
+        public init(type: SheetJS.ParsingOptions.InputType? = nil, raw: Bool? = nil, codepage: String? = nil, cellFormula: Bool? = nil, cellHTML: Bool? = nil, cellNF: Bool? = nil, cellStyles: Bool? = nil, cellText: Bool? = nil, cellDates: Bool? = nil, dateNF: String? = nil, sheetStubs: Bool? = nil, sheetRows: Int? = nil, bookDeps: Bool? = nil, bookFiles: Bool? = nil, bookProps: Bool? = nil, bookSheets: Bool? = nil, bookVBA: Bool? = nil, password: String? = nil, WTF: Bool? = nil, sheets: [String]? = nil, PRN: Bool? = nil, xlfn: Bool? = nil) {
+            self.type = type
+            self.raw = raw
+            self.codepage = codepage
+            self.cellFormula = cellFormula
+            self.cellHTML = cellHTML
+            self.cellNF = cellNF
+            self.cellStyles = cellStyles
+            self.cellText = cellText
+            self.cellDates = cellDates
+            self.dateNF = dateNF
+            self.sheetStubs = sheetStubs
+            self.sheetRows = sheetRows
+            self.bookDeps = bookDeps
+            self.bookFiles = bookFiles
+            self.bookProps = bookProps
+            self.bookSheets = bookSheets
+            self.bookVBA = bookVBA
+            self.password = password
+            self.WTF = WTF
+            self.sheets = sheets
+            self.PRN = PRN
+            self.xlfn = xlfn
+        }
+
     }
 }
 
