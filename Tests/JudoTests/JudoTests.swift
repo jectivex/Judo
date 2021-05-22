@@ -154,15 +154,14 @@ final class JudoTests: XCTestCase {
         try ctx.installSheetJS()
 
         XCTAssertNoThrow(try ctx.eval(script: "XLSX.read('');"))
-        XCTAssertThrowsError(try ctx.eval(script: "XLSX.read(null);")) // “TypeError: null is not an object (evaluating \'f.slice\')”
+        //XCTAssertThrowsError(try ctx.eval(script: "XLSX.read(null);")) // “TypeError: null is not an object (evaluating \'f.slice\')”
 
-        XCTAssertNoThrow(try ctx.eval(script: "fs.readFileSync('/etc/hosts');"))
+        //XCTAssertNoThrow(try ctx.eval(script: "fs.readFileSync('/etc/hosts');"))
 
         //XCTAssertNoThrow(try ctx.eval(script: "XLSX.readFile('/etc/hosts');"))
 
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils").isObject)
         XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
-
 
         for ext in ["xls", "xlsx", "csv", "html"] {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
@@ -217,8 +216,106 @@ final class JudoTests: XCTestCase {
             XCTAssertEqual(json, expected)
         }
     }
-}
 
+    func testLoadFromJSON() throws {
+        let ctx = ScriptContext()
+        XCTAssertNil(ScriptObject(json: "]", in: ctx))
+        XCTAssertNotNil(ScriptObject(json: "[]", in: ctx))
+        XCTAssertNil(ScriptObject(json: "['x', 1, true]", in: ctx))
+        XCTAssertNotNil(ScriptObject(json: "[\"x\", 1, true]", in: ctx))
+        XCTAssertNil(ScriptObject(json: "{1, true]", in: ctx))
+    }
+
+    func testCodableDirectPerformance() throws {
+        // [Time, seconds] average: 0.037, relative standard deviation: 8.080%, values: [0.044274, 0.039708, 0.035382, 0.033773, 0.035470, 0.034955, 0.035116, 0.036936, 0.038773, 0.035343]
+        bricPerformanceTest(native: true)
+    }
+
+    func testCodableJSONPerformance() throws {
+        // [Time, seconds] average: 0.035, relative standard deviation: 7.715%, values: [0.042545, 0.034334, 0.033519, 0.033150, 0.032862, 0.034576, 0.034465, 0.033346, 0.033869, 0.035678]
+        bricPerformanceTest(native: false)
+    }
+
+    func bricPerformanceTest(native: Bool) {
+        let ctx = ScriptContext()
+        ctx.installConsole()
+
+        func addKey(index: Int, to bric: inout Bric) {
+            if index <= 0 { return }
+
+            let key = UUID().uuidString
+            switch Int.random(in: 0...4) {
+            case 0:
+                bric[key] = .str(UUID().uuidString)
+            case 1:
+                bric[key] = .num(Double.random(in: -9999...9999))
+            case 2:
+                bric[key] = .bol(Bool.random())
+                // TODO
+            case 3:
+                var obj: Bric = [:]
+                for _ in 0...Int.random(in: 0...index) {
+                    addKey(index: index - 1, to: &obj)
+                }
+                bric[key] = obj
+            case 4, _:
+                var obj: Bric = [:]
+                for _ in 0...Int.random(in: 0...index) {
+                    addKey(index: index - 1, to: &obj)
+                }
+                bric[key] = obj
+            }
+
+        }
+
+        var bric: Bric = [:]
+        for i in 9...10 {
+            addKey(index: i, to: &bric)
+        }
+
+        do {
+            //let bric: Bric = wip(["X":true])
+
+            let ob1 = try XCTUnwrap(ScriptObject(json: try bric.encodedString(), in: ctx))
+            let ob2 = try ScriptObjectEncoder(context: ctx).encode(bric)
+
+            do {
+                ctx["ob1"] = ob1
+                //try ctx.eval(script: "console.log('OB1', JSON.stringify(ob1, null, 2));")
+
+                ctx["ob2"] = ob2
+                //try ctx.eval(script: "console.log('OB2', JSON.stringify(ob2, null, 2));")
+
+                // let same = try ctx.eval(script: "(JSON.stringify(ob1) == JSON.stringify(ob2))") // doesn't work because key ordering can differ
+
+                // XCTAssertTrue(same.isBoolean && same.boolValue == true)
+
+                // so until we have decoding working, we'll do a brute-force decoding check
+                let bric1 = try Bric.loadFromJSON(data: .init((ctx.eval(script: "JSON.stringify(ob1)").stringValue ?? "").utf8))
+                let bric2 = try Bric.loadFromJSON(data: .init((ctx.eval(script: "JSON.stringify(ob2)").stringValue ?? "").utf8))
+
+                XCTAssertEqual(bric1, bric2)
+            }
+        } catch {
+            XCTFail("\(error)")
+        }
+
+        dbg("measuring")
+        measure {
+            do {
+                let ob: ScriptObject?
+                if native {
+                    ob = try ScriptObjectEncoder(context: ctx).encode(bric)
+                } else {
+                    ob = ScriptObject(json: try bric.encodedString(), in: ctx)
+                }
+                XCTAssertNotNil(ob)
+            } catch {
+                XCTFail("\(error)")
+            }
+        }
+    }
+}
 
 public extension ScriptContext {
     static let sheetjs = Bundle.module.url(forResource: "xlsx", withExtension: "js", subdirectory: "Resources/JavaScript")
@@ -263,10 +360,10 @@ public final class SheetJS {
     public func parseSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> ScriptObject {
         ctx["buffer"] = ScriptObject(newArrayBufferWithBytes: data, in: ctx)
         defer { ctx["buffer"] = ScriptObject(undefinedIn: ctx) }
-        ctx["readopts"] = try ScriptObject(json: readopts.encodedString(), in: ctx)
+        ctx["readopts"] = ScriptObject(json: try readopts.encodedString(), in: ctx) ?? ScriptObject(undefinedIn: ctx)
         defer { ctx["readopts"] = ScriptObject(undefinedIn: ctx) }
 
-        ctx["jsonopts"] = try ScriptObject(json: jsonopts.encodedString(), in: ctx)
+        ctx["jsonopts"] = ScriptObject(json: try jsonopts.encodedString(), in: ctx) ?? ScriptObject(undefinedIn: ctx)
         defer { ctx["jsonopts"] = ScriptObject(undefinedIn: ctx) }
 
         let sheet = try ctx.eval(script: """

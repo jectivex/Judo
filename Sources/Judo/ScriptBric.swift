@@ -8,20 +8,9 @@
 
 import SwiftJS
 import BricBrac
+import MiscKit
 
 extension ScriptObject {
-    /// Creates a JavaScript value of the `Bric` JSON type.
-    ///
-    /// - Parameters:
-    ///   - value: The value to assign to the object.
-    ///   - context: The execution context to use.
-    @inlinable public convenience init(bric value: Bric, in context: ScriptContext) throws {
-        let json = try value.encodedString()
-        let value = json.withCString(JSStringCreateWithUTF8CString)
-        defer { JSStringRelease(value) }
-        self.init(context: context, object: JSValueMakeFromJSONString(context.context, value))
-    }
-
     /// Returns the JavaScript string value.
     @inlinable public func toJSON(indent: UInt32 = 0) -> String? {
         var ex: JSValueRef?
@@ -31,7 +20,20 @@ extension ScriptObject {
     }
 
     /// Converts the instance to JSON and returns it as a `Bric` instance
-    @inlinable public func toBric() throws -> Bric? {
-        try toJSON().map({ try Bric.parse($0) })
+    /// - Parameter native: whether to parse the string manually, which can be faster in some circumstances
+    /// - Returns: the parsed Bric
+    @inlinable public func toBric(native: Bool = false) throws -> Bric? {
+        if native {
+            return try toDecodable(ofType: Bric.self)
+        } else {
+            return try toJSON().map({ try Bric.parse($0) })
+        }
+    }
+
+    /// Converts the instance to JSON and returns it as a `Bric` instance
+    @inlinable public func toDecodable<T: Decodable>(ofType: T.Type) throws -> T {
+        //try ScriptObjectDecoder(context: context).decode(self, ofType: ofType)
+        throw err(wip("TODO"))
     }
 }
+
