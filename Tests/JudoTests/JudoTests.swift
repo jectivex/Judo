@@ -144,6 +144,77 @@ final class JudoTests: XCTestCase {
         }
     }
 
+    func testRoundTripBric() throws {
+        let ctx = ScriptContext()
+
+        func rt(_ bric: Bric, line: UInt = #line) throws {
+            XCTAssertEqual(bric, try ctx.encode(bric).toBric(), line: line)
+        }
+
+        try rt(1)
+        try rt("X")
+        try rt(true)
+        try rt(false)
+        try rt(nil)
+        try rt(1.234)
+
+        try rt([])
+        try rt([:])
+
+        try rt(["x": 1])
+        try rt(["x": 1.1])
+        try rt(["x": true])
+        try rt(["x": false])
+        try rt(["x": "ABC"])
+        try rt(["x": [1,true,false,0.1,"XYZ"]])
+
+    }
+
+    func testRoundTripCodables() throws {
+        let ctx = ScriptContext()
+
+        func rt<T: Codable & Equatable>(_ item: T, line: UInt = #line) throws {
+            XCTAssertEqual(item, try ctx.encode(item).toDecodable(ofType: T.self), line: line)
+        }
+
+        try rt(1)
+        try rt("X")
+        try rt(true)
+        try rt(false)
+//        try rt(nil)
+        try rt(1.234)
+
+//        try rt([])
+//        try rt([:])
+
+        try rt(["x": 1])
+        try rt(["x": 1.1])
+        try rt(["x": true])
+        try rt(["x": false])
+        try rt(["x": "ABC"])
+//        try rt(["x": [1,true,false,0.1,"XYZ"]])
+
+        struct DataStruct: Codable, Equatable { var data: Data }
+        try rt(DataStruct(data: Data("XYZ".utf8)))
+
+        struct DateStruct: Codable, Equatable { var date: Date }
+        try rt(DateStruct(date: Date(timeIntervalSince1970: 0)))
+        try rt(DateStruct(date: Date(timeIntervalSinceReferenceDate: 0)))
+
+    }
+
+    func testCodableArguments() throws {
+        let ctx = ScriptContext()
+
+        let htpy = ScriptObject(newFunctionIn: ctx) { ctx, this, args in
+            ScriptObject(double: sqrt(pow(args[0].doubleValue ?? 0.0, 2) + pow(args[1].doubleValue ?? 0.0, 2)), in: ctx)
+        }
+
+        func num(_ double: Double) -> ScriptObject { ScriptObject(double: double, in: ctx) }
+
+        XCTAssertEqual(5, htpy.call(withArguments: [num(3), num(4)]).doubleValue)
+    }
+
     func testLoadSheetJS() throws {
 
         let ctx = ScriptContext()
@@ -277,7 +348,7 @@ final class JudoTests: XCTestCase {
             //let bric: Bric = wip(["X":true])
 
             let ob1 = try XCTUnwrap(ScriptObject(json: try bric.encodedString(), in: ctx))
-            let ob2 = try ScriptObjectEncoder(context: ctx).encode(bric)
+            let ob2 = try ctx.encode(bric)
 
             do {
                 ctx["ob1"] = ob1

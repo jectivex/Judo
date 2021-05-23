@@ -22,7 +22,7 @@ extension ScriptObject {
     /// Converts the instance to JSON and returns it as a `Bric` instance
     /// - Parameter native: whether to parse the string manually, which can be faster in some circumstances
     /// - Returns: the parsed Bric
-    @inlinable public func toBric(native: Bool = false) throws -> Bric? {
+    @inlinable public func toBric(native: Bool = wip(false)) throws -> Bric? {
         if native {
             return try toDecodable(ofType: Bric.self)
         } else {
@@ -32,8 +32,7 @@ extension ScriptObject {
 
     /// Converts the instance to JSON and returns it as a `Bric` instance
     @inlinable public func toDecodable<T: Decodable>(ofType: T.Type) throws -> T {
-        //try ScriptObjectDecoder(context: context).decode(self, ofType: ofType)
-        throw err(wip("TODO"))
+        try ScriptObjectDecoder(context: context).decode(ofType, from: self)
     }
 }
 
