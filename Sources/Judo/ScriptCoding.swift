@@ -66,36 +66,36 @@ extension ScriptObject {
 open class ScriptObjectEncoder {
 
     // MARK: - Options
-    /// The output format to write the property list data in. Defaults to `.binary`.
-    open var outputFormat: PropertyListSerialization.PropertyListFormat = .binary
+    /// The output format to write the script object data in. Defaults to `.binary`.
+    // open var outputFormat: Format = .binary
 
     /// Contextual user-provided information for use during encoding.
     open var userInfo: [CodingUserInfoKey : Any] = [:]
 
     /// Options set on the top-level encoder to pass down the encoding hierarchy.
     fileprivate struct _Options {
-        let outputFormat: PropertyListSerialization.PropertyListFormat
+        //let outputFormat: PropertyListSerialization.PropertyListFormat
         let userInfo: [CodingUserInfoKey : Any]
     }
 
     /// The options set on the top-level encoder.
     fileprivate var options: _Options {
-        return _Options(outputFormat: outputFormat, userInfo: userInfo)
+        return _Options(userInfo: userInfo)
     }
 
     let context: ScriptContext
 
-    // MARK: - Constructing a Property List Encoder
+    // MARK: - Constructing a script object Encoder
     /// Initializes `self` with default strategies.
     public init(context: ScriptContext) {
         self.context = context
     }
 
     // MARK: - Encoding Values
-    /// Encodes the given top-level value and returns its property list representation.
+    /// Encodes the given top-level value and returns its script object representation.
     ///
     /// - parameter value: The value to encode.
-    /// - returns: A new `Data` value containing the encoded property list data.
+    /// - returns: A new `Data` value containing the encoded script object data.
     /// - throws: `EncodingError.invalidValue` if a non-conforming floating-point value is encountered during encoding, and the encoding strategy is `.throw`.
     /// - throws: An error if any value throws an error during encoding.
     open func encode<Value : Encodable>(_ value: Value) throws -> ScriptObject {
@@ -103,7 +103,7 @@ open class ScriptObjectEncoder {
         return topLevel
     }
 
-    /// Encodes the given top-level value and returns its plist-type representation.
+    /// Encodes the given top-level value and returns its script-type representation.
     ///
     /// - parameter value: The value to encode.
     /// - returns: A new top-level array or dictionary representing the value.
@@ -208,7 +208,7 @@ fileprivate class JSEncoder : Encoder {
 fileprivate struct _ScriptEncodingStorage {
     // MARK: Properties
     /// The container stack.
-    /// Elements may be any one of the plist types (NSNumber, NSString, NSDate, NSArray, NSDictionary).
+    /// Elements may be any one of the script types
     private(set) fileprivate var containers: [ScriptObject] = []
 
     // MARK: - Initialization
@@ -674,7 +674,7 @@ fileprivate class __ScriptReferencingEncoder : JSEncoder {
 
 // MARK: Decoder
 
-/// `ScriptObjectDecoder` facilitates the decoding of property list values into semantic `Decodable` types.
+/// `ScriptObjectDecoder` facilitates the decoding of `ScriptObject` values into semantic `Decodable` types.
 open class ScriptObjectDecoder {
     let context: ScriptContext
     
@@ -692,43 +692,43 @@ open class ScriptObjectDecoder {
         return _Options(userInfo: userInfo)
     }
 
-    // MARK: - Constructing a Property List Decoder
+    // MARK: - Constructing a ScriptObject Decoder
     /// Initializes `self` with default strategies.
     public init(context: ScriptContext) {
         self.context = context
     }
 
     // MARK: - Decoding Values
-    /// Decodes a top-level value of the given type from the given property list representation.
+    /// Decodes a top-level value of the given type from the given script representation.
     ///
     /// - parameter type: The type of the value to decode.
     /// - parameter data: The data to decode from.
     /// - returns: A value of the requested type.
-    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid property list.
+    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid script object.
     /// - throws: An error if any value throws an error during decoding.
     open func decode<T : Decodable>(_ type: T.Type, from data: ScriptObject) throws -> T {
         var format: PropertyListSerialization.PropertyListFormat = .binary
         return try decode(type, from: data, format: &format)
     }
 
-    /// Decodes a top-level value of the given type from the given property list representation.
+    /// Decodes a top-level value of the given type from the given script object representation.
     ///
     /// - parameter type: The type of the value to decode.
     /// - parameter data: The data to decode from.
-    /// - parameter format: The parsed property list format.
-    /// - returns: A value of the requested type along with the detected format of the property list.
-    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid property list.
+    /// - parameter format: The parsed script object format.
+    /// - returns: A value of the requested type along with the detected format of the script object.
+    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid script object.
     /// - throws: An error if any value throws an error during decoding.
     open func decode<T : Decodable>(_ type: T.Type, from object: ScriptObject, format: inout PropertyListSerialization.PropertyListFormat) throws -> T {
         return try decode(type, fromTopLevel: object)
     }
 
-    /// Decodes a top-level value of the given type from the given property list container (top-level array or dictionary).
+    /// Decodes a top-level value of the given type from the given script object container (top-level array or dictionary).
     ///
     /// - parameter type: The type of the value to decode.
-    /// - parameter container: The top-level plist container.
+    /// - parameter container: The top-level script container.
     /// - returns: A value of the requested type.
-    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid property list.
+    /// - throws: `DecodingError.dataCorrupted` if values requested from the payload are corrupted, or if the given data is not a valid script object.
     /// - throws: An error if any value throws an error during decoding.
     internal func decode<T : Decodable>(_ type: T.Type, fromTopLevel container: ScriptObject) throws -> T {
         let decoder = __ScriptDecoder(referencing: container, options: self.options)
@@ -809,7 +809,7 @@ fileprivate class __ScriptDecoder : Decoder {
 fileprivate struct _ScriptDecodingStorage {
     // MARK: Properties
     /// The container stack.
-    /// Elements may be any one of the plist types (NSNumber, Date, String, Array, [String : Any]).
+    /// Elements may be any one of the script types
     private(set) fileprivate var containers: [ScriptObject] = []
 
     // MARK: - Initialization
@@ -1501,13 +1501,13 @@ fileprivate struct _ScriptUnkeyedDecodingContainer : UnkeyedDecodingContainer {
 extension __ScriptDecoder : SingleValueDecodingContainer {
     // MARK: SingleValueDecodingContainer Methods
     private func expectNonNull<T>(_ type: T.Type) throws {
-        guard !self.decodeNil() else {
+        if storage.topContainer.isUndefined || storage.topContainer.isNull {
             throw DecodingError.valueNotFound(type, DecodingError.Context(codingPath: self.codingPath, debugDescription: "Expected \(type) but found null value instead."))
         }
     }
 
     public func decodeNil() -> Bool {
-        storage.topContainer.isNull
+        storage.topContainer.isUndefined || storage.topContainer.isNull
     }
 
     public func decode(_ type: Bool.Type) throws -> Bool {
