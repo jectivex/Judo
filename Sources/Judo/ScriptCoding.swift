@@ -53,10 +53,12 @@ extension ScriptObject {
         }
     }
 
-    @available(*, deprecated, message: "WARNING: does not work correctly: it sets the object at the index rather than shifting it")
     func insert(_ object: ScriptObject, at index: Int) {
         if isArray {
-            self[index] = object
+            for i in (max(1, index)...count).reversed() {
+                self[i] = self[i-1] // shift all the latter elements up by one
+            }
+            self[index] = object // and fill in the index (JS permits assigning a non-existent index)
         } else {
             print("warning: ignoring array call on non-array")
         }
@@ -99,8 +101,7 @@ open class ScriptObjectEncoder {
     /// - throws: `EncodingError.invalidValue` if a non-conforming floating-point value is encountered during encoding, and the encoding strategy is `.throw`.
     /// - throws: An error if any value throws an error during encoding.
     open func encode<Value : Encodable>(_ value: Value) throws -> ScriptObject {
-        let topLevel = try encodeToTopLevelContainer(value)
-        return topLevel
+        try encodeToTopLevelContainer(value)
     }
 
     /// Encodes the given top-level value and returns its script-type representation.
@@ -464,6 +465,7 @@ extension JSEncoder {
             return ScriptObject(newArrayBufferWithBytes: data, in: context)
         }
 
+        // this is some more code I am writing and reading and so there will be ore JSON
         // The value should request a container from the JSEncoder.
         let depth = self.storage.count
         do {

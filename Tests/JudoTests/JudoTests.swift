@@ -336,6 +336,20 @@ final class JudoTests: XCTestCase {
         XCTAssertNil(ScriptObject(json: "{1, true]", in: ctx))
     }
 
+    struct RandomNumberGeneratorWithSeed: RandomNumberGenerator {
+        init(seed: Int) {
+            // Set the random seed
+            srand48(seed)
+        }
+
+        func next() -> UInt64 {
+            // drand48() returns a Double, transform to UInt64
+            return withUnsafeBytes(of: drand48()) { bytes in
+                bytes.load(as: UInt64.self)
+            }
+        }
+    }
+
     func testCodableDirectPerformance() throws {
         // [Time, seconds] average: 0.037, relative standard deviation: 8.080%, values: [0.044274, 0.039708, 0.035382, 0.033773, 0.035470, 0.034955, 0.035116, 0.036936, 0.038773, 0.035343]
         bricPerformanceTest(native: true)
@@ -346,71 +360,60 @@ final class JudoTests: XCTestCase {
         bricPerformanceTest(native: false)
     }
 
-    func bricPerformanceTest(native: Bool) {
+
+    func bricPerformanceTest(native: Bool, seed: Int = 11111) {
         let ctx = ScriptContext()
         ctx.installConsole()
 
-        func addKey(index: Int, to bric: inout Bric) {
-            if index <= 0 { return }
+        var rnd = RandomNumberGeneratorWithSeed(seed: seed)
 
-            let key = UUID().uuidString
-            switch Int.random(in: 0...4) {
-            case 0:
-                bric[key] = .str(UUID().uuidString)
-            case 1:
-                bric[key] = .num(Double.random(in: -9999...9999))
-            case 2:
-                bric[key] = .bol(Bool.random())
-                // TODO
-            case 3:
-                var obj: Bric = [:]
-                for _ in 0...Int.random(in: 0...index) {
-                    addKey(index: index - 1, to: &obj)
+        func fillObject(count: Int, level: Int, to bric: inout Bric) {
+            if level <= 0 { return }
+
+            for i in 0...count {
+                let key = "key_\(level)_\(i)"
+                switch Int.random(in: 0...5, using: &rnd) {
+                case 0: // .nul
+                    bric[key] = .nul
+                case 1: // .str
+                    bric[key] = .str(((0...Int.random(in: 0...9, using: &rnd)).map({ _ in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }).joined()))
+                case 2: // .num
+                    bric[key] = .num(Double.random(in: -9999...9999, using: &rnd))
+                case 3: // .bol
+                    bric[key] = .bol(Bool.random(using: &rnd))
+                case 4: // .obj
+                    var obj: Bric = [:]
+                    for _ in 0...level {
+                        fillObject(count: count, level: level - 1, to: &obj)
+                    }
+                    bric[key] = obj
+                case 5, _: // .arr
+                    var obj: Bric = [:]
+                    for _ in 0...level {
+                        fillObject(count: count, level: level - 1, to: &obj)
+                    }
+                    bric[key] = .arr(Array(obj.obj!.values)) // convert to object values
                 }
-                bric[key] = obj
-            case 4, _:
-                var obj: Bric = [:]
-                for _ in 0...Int.random(in: 0...index) {
-                    addKey(index: index - 1, to: &obj)
-                }
-                bric[key] = obj
             }
-
         }
 
         var bric: Bric = [:]
-        for i in 9...10 {
-            addKey(index: i, to: &bric)
-        }
 
         do {
-            //let bric: Bric = wip(["X":true])
+            // make a big random Bric
+            fillObject(count: 10_000, level: 450, to: &bric)
 
-            let ob1 = try XCTUnwrap(ScriptObject(json: try bric.encodedString(), in: ctx))
+            let str = try bric.encodedString()
+            dbg("testing with JSON size:", str.count)
+
+            let ob1 = try XCTUnwrap(ScriptObject(json: str, in: ctx))
             let ob2 = try ctx.encode(bric)
 
-            do {
-                ctx["ob1"] = ob1
-                //try ctx.eval(script: "console.log('OB1', JSON.stringify(ob1, null, 2));")
-
-                ctx["ob2"] = ob2
-                //try ctx.eval(script: "console.log('OB2', JSON.stringify(ob2, null, 2));")
-
-                // let same = try ctx.eval(script: "(JSON.stringify(ob1) == JSON.stringify(ob2))") // doesn't work because key ordering can differ
-
-                // XCTAssertTrue(same.isBoolean && same.boolValue == true)
-
-                // so until we have decoding working, we'll do a brute-force decoding check
-                let bric1 = try Bric.loadFromJSON(data: .init((ctx.eval(script: "JSON.stringify(ob1)").stringValue ?? "").utf8))
-                let bric2 = try Bric.loadFromJSON(data: .init((ctx.eval(script: "JSON.stringify(ob2)").stringValue ?? "").utf8))
-
-                XCTAssertEqual(bric1, bric2)
-            }
+            XCTAssertEqual(try ob1.toDecodable(ofType: Bric.self), try ob2.toDecodable(ofType: Bric.self))
         } catch {
             XCTFail("\(error)")
         }
 
-        dbg("measuring")
         measure {
             do {
                 let ob: ScriptObject?

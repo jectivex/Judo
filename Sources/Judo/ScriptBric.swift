@@ -11,13 +11,6 @@ import BricBrac
 import MiscKit
 
 extension ScriptObject {
-    /// Returns the JavaScript string value.
-    @inlinable public func toJSON(indent: UInt32 = 0) -> String? {
-        var ex: JSValueRef?
-        let str = JSValueCreateJSONString(context.context, object, indent, &ex)
-        defer { str.map(JSStringRelease) }
-        return str.map(String.init)
-    }
 
     /// Converts the instance to JSON and returns it as a `Bric` instance
     /// - Parameter native: whether to parse the string manually, which can be faster in some circumstances
