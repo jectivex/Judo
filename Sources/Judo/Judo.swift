@@ -1,4 +1,4 @@
-import SwiftJS
+import JXSwift
 import BricBrac
 import MiscKit
 

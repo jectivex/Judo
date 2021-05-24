@@ -1,7 +1,7 @@
 import XCTest
 @testable import Judo
 
-import SwiftJS
+import JXSwift
 import MiscKit
 
 final class JudoTests: XCTestCase {
@@ -453,7 +453,7 @@ public extension ScriptContext {
     }
 }
 
-/// Uses `SwiftJS` and `SheetJS`
+/// Uses `JXSwift` and `SheetJS`
 public final class SheetJS {
     public static let shared = Result { try SheetJS() }
     let ctx: ScriptContext
