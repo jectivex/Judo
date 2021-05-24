@@ -1,5 +1,5 @@
 import XCTest
-@testable import Judo
+import Judo
 import MiscKit
 
 final class JudoTests: XCTestCase {
@@ -308,7 +308,7 @@ final class JudoTests: XCTestCase {
     @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func checkSheetJSSamples(_ sheetjs: SheetJS, extensions: [String] = ["xls", "xlsx", "csv", "html"]) throws {
         for ext in extensions {
-            guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
+            guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "TestResources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
 
@@ -430,8 +430,8 @@ final class JudoTests: XCTestCase {
 }
 
 public extension JXContext {
-    static let sheetjs = Bundle.module.url(forResource: "xlsx", withExtension: "js", subdirectory: "Resources/JavaScript")
-    static let jszipjs = Bundle.module.url(forResource: "jszip", withExtension: "js", subdirectory: "Resources/JavaScript")
+    static let sheetjs = Bundle.module.url(forResource: "xlsx", withExtension: "js", subdirectory: "TestResources/JavaScript")
+    static let jszipjs = Bundle.module.url(forResource: "jszip", withExtension: "js", subdirectory: "TestResources/JavaScript")
 
     /// Runs `jszip.js` to set up JSZip.
     func installJSZip() throws {
