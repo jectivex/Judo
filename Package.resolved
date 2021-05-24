@@ -6,7 +6,7 @@
         "repositoryURL": "https://github.com/glimpseio/BricBrac.git",
         "state": {
           "branch": "main",
-          "revision": "7898aca80afe112c34ff0d1da731fe131c48889b",
+          "revision": "7eae58a226fa25dd7ed364f76fc497c128575528",
           "version": null
         }
       },
@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/glimpseio/MiscKit.git",
         "state": {
           "branch": "main",
-          "revision": "8428673a1b36314313a8633944dd7c28043be5f9",
+          "revision": "9db2fa4549f0908bf52b5f307471c0c34394db2a",
           "version": null
         }
       }

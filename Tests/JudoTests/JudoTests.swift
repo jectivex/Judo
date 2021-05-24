@@ -314,7 +314,7 @@ final class JudoTests: XCTestCase {
 
             let ropts = SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)
 
-            let json = try sheetjs.sheetToJSON(data: try Data(contentsOf: demoURL), readopts: ropts).toBric(native: true) ?? .nul
+            let sheets: [SheetJS.Sheet] = try sheetjs.extractSheet(data: try Data(contentsOf: demoURL), readopts: ropts)
 
             let expected = ext == "csv" ? csvSample
                 : ext == "html" ? htmlSample
@@ -322,7 +322,7 @@ final class JudoTests: XCTestCase {
                 : ext == "xls" ? xlsSample
                 : Bric.nul
 
-            XCTAssertEqual(json, expected)
+            XCTAssertEqual(try sheets.bricEncoded(), expected)
         }
     }
 
@@ -453,28 +453,21 @@ public extension JSContext {
     }
 }
 
-/// An API that permits the loading
-public protocol SheetJSAPI {
-    func sheetToJSON(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions) throws -> JSValue
-}
-
 /// Uses `JXKit` and `SheetJS`
-public final class SheetJS : SheetJSAPI {
-    let ctx: JSContext
+open class SheetJS {
+    open var ctx: JSContext
     let sheet_to_json: JSValue
 
-    public init(mnt: String? = nil) throws {
+    public init() throws {
         self.ctx = JSContext()
 
         // ctx.installExports(require: true)
-        ctx.installConsole()
-        ctx.installTimer(immediate: true)
-
-        if let mnt = mnt {
-            try ctx.installBrowserFS(mountPoint: mnt)
-        }
+        // ctx.installConsole()
+        // ctx.installTimer(immediate: true)
 
         try ctx.installSheetJS()
+
+        // cache commonly-used functions
 
         self.sheet_to_json = try ctx.eval(script: """
             (function(buffer, readopts, jsonopts) {
@@ -494,8 +487,9 @@ public final class SheetJS : SheetJSAPI {
 
     }
 
-    public func sheetToJSON(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> JSValue {
+    public func extractSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> [Sheet] {
 
+        // encode the array arguments
         let buffer = JSValue(newArrayBufferWithBytes: data, in: ctx)
         let readopts = try ctx.encode(readopts)
         let jsonopts = try ctx.encode(jsonopts)
@@ -503,7 +497,16 @@ public final class SheetJS : SheetJSAPI {
             sheet_to_json.call(withArguments: [buffer, readopts, jsonopts])
         }
 
-        return sheet
+        return try sheet.toDecodable(ofType: [Sheet].self)
+    }
+
+
+    /// A sheet that contains some data
+    public struct Sheet: Codable, Hashable {
+        /// The name of the sheet (defaulting to "Sheet1")
+        public var name: String
+        /// The data contained in the sheet. The structure of the data will depending on the value of the `SheetJS.JSONOptions.header` option.
+        public var data: [Bric]
     }
 
 
@@ -551,8 +554,6 @@ public final class SheetJS : SheetJSAPI {
             self.defval = defval
             self.blankrows = blankrows
         }
-
-
     }
 
     /// https://github.com/sheetjs/sheetjs#parsing-options
