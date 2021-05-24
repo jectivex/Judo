@@ -17,10 +17,10 @@ let package = Package(
         .target(
             name: "Judo",
             dependencies: ["MiscKit", "JXKit", "BricBrac"],
-            resources: [.copy("Resources")]),
+            resources: [.process("Resources")]),
         .testTarget(
             name: "JudoTests",
             dependencies: ["Judo"],
-            resources: [.copy("Resources")]),
+            resources: [.process("Resources")]),
     ]
 )

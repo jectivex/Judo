@@ -19,6 +19,7 @@ final class JudoTests: XCTestCase {
         try context.eval(script: "exports.x")
     }
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func testFileBrowser() throws {
         let ctx = JXContext()
 
@@ -230,6 +231,7 @@ final class JudoTests: XCTestCase {
         }
     }
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func testCodableArguments() throws {
         let ctx = JXContext()
 
@@ -252,6 +254,7 @@ final class JudoTests: XCTestCase {
         XCTAssertEqual(hypot(10, 10), try hfun(Args(x: 10, y: 10)))
     }
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func testLoadSheetJS() throws {
         // re-use a single SheetJS for bechmarking
         let sheetjs = try SheetJS()
@@ -302,6 +305,7 @@ final class JudoTests: XCTestCase {
 
     let htmlSample: Bric = [ ["name":"Sheet1","data":[["Years","CBR","Years","CBR"], ["1950–1955",36.9,"2000–2005",21], ["1955–1960",35.4,"2005–2010",20.3], ["1960–1965",35.2,"2010–2015",19.5], ["1965–1970",34,"2015–2020",18.5], ["1970–1975",31.4,"2020–2025",17.5], ["1975–1980",28.5,"2025–2030",16.6], ["1980–1985",27.7,"2030–2035",16], ["1985–1990",27.4,"2035–2040",15.5], ["1990–1995",24.2,"2040–2045",15], ["1995–2000",22.2,"2045–2050",14.6]]]]
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func checkSheetJSSamples(_ sheetjs: SheetJS, extensions: [String] = ["xls", "xlsx", "csv", "html"]) throws {
         for ext in extensions {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
@@ -483,6 +487,7 @@ open class SheetJS {
 
     }
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     public func extractSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> [Sheet] {
 
         // encode the array arguments
