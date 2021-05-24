@@ -10,7 +10,7 @@ import JXKit
 import BricBrac
 import MiscKit
 
-extension JSValue {
+extension JXValue {
 
     /// Converts the instance to JSON and returns it as a `Bric` instance
     /// - Parameter native: whether to parse the string manually, which can be faster in some circumstances

@@ -1,9 +1,5 @@
 import XCTest
 @testable import Judo
-
-//import JavaScriptCore
-import JXKit
-
 import MiscKit
 
 final class JudoTests: XCTestCase {
@@ -11,7 +7,7 @@ final class JudoTests: XCTestCase {
     let fm = FileManager.default
 
     func testCallbackFunctions() throws {
-        let context = JSContext()
+        let context = JXContext()
 
         context.installConsole()
         try context.eval(script: "console.log('test');")
@@ -24,7 +20,7 @@ final class JudoTests: XCTestCase {
     }
 
     func testFileBrowser() throws {
-        let ctx = JSContext()
+        let ctx = JXContext()
 
         try ctx.trying { ctx.installConsole() }
         try ctx.trying { ctx.installTimer() }
@@ -39,7 +35,7 @@ final class JudoTests: XCTestCase {
         XCTAssertEqual("[object Object]", try ctx.eval(script: "new fs.FS.Stats()").stringValue)
         XCTAssertEqual("false", try ctx.eval(script: "new fs.FS.Stats().isDirectory()").stringValue)
 
-        func fstat(path: String, mnt: Bool) throws -> JSValue {
+        func fstat(path: String, mnt: Bool) throws -> JXValue {
             try ctx.eval(script: "fs.statSync('\(mnt ? mount : "")\(path)').isDirectory()")
         }
 
@@ -68,7 +64,7 @@ final class JudoTests: XCTestCase {
          await xxx();
          */
 
-        func roundtripFile(sync: Bool, path: String, string: String, encoding: String) throws -> JSValue {
+        func roundtripFile(sync: Bool, path: String, string: String, encoding: String) throws -> JXValue {
             if sync {
                 return try ctx.eval(script: """
                 (function() {
@@ -147,7 +143,7 @@ final class JudoTests: XCTestCase {
     }
 
     func testRoundTripBric() throws {
-        let ctx = JSContext()
+        let ctx = JXContext()
 
         func rt(_ bric: Bric, native: Bool = true, line: UInt = #line) throws {
             XCTAssertEqual(bric, try ctx.encode(bric).toBric(native: native), line: line)
@@ -173,7 +169,7 @@ final class JudoTests: XCTestCase {
     }
 
     func testRoundTripCodables() throws {
-        let ctx = JSContext()
+        let ctx = JXContext()
 
         func rt<T: Codable & Equatable>(equal: Bool = true, _ item: T, line: UInt = #line) throws {
             let encoded = try ctx.encode(item)
@@ -235,10 +231,10 @@ final class JudoTests: XCTestCase {
     }
 
     func testCodableArguments() throws {
-        let ctx = JSContext()
+        let ctx = JXContext()
 
-        let htpy = JSValue(newFunctionIn: ctx) { ctx, this, args in
-            JSValue(double: sqrt(pow(args.first?["x"].doubleValue ?? 0.0, 2) + pow(args.first?["y"].doubleValue ?? 0.0, 2)), in: ctx)
+        let htpy = JXValue(newFunctionIn: ctx) { ctx, this, args in
+            JXValue(double: sqrt(pow(args.first?["x"].doubleValue ?? 0.0, 2) + pow(args.first?["y"].doubleValue ?? 0.0, 2)), in: ctx)
         }
 
         struct Args : Encodable {
@@ -327,12 +323,12 @@ final class JudoTests: XCTestCase {
     }
 
     func testLoadFromJSON() throws {
-        let ctx = JSContext()
-        XCTAssertNil(JSValue(json: "]", in: ctx))
-        XCTAssertNotNil(JSValue(json: "[]", in: ctx))
-        XCTAssertNil(JSValue(json: "['x', 1, true]", in: ctx))
-        XCTAssertNotNil(JSValue(json: "[\"x\", 1, true]", in: ctx))
-        XCTAssertNil(JSValue(json: "{1, true]", in: ctx))
+        let ctx = JXContext()
+        XCTAssertNil(JXValue(json: "]", in: ctx))
+        XCTAssertNotNil(JXValue(json: "[]", in: ctx))
+        XCTAssertNil(JXValue(json: "['x', 1, true]", in: ctx))
+        XCTAssertNotNil(JXValue(json: "[\"x\", 1, true]", in: ctx))
+        XCTAssertNil(JXValue(json: "{1, true]", in: ctx))
     }
 
     struct RandomNumberGeneratorWithSeed: RandomNumberGenerator {
@@ -361,7 +357,7 @@ final class JudoTests: XCTestCase {
 
 
     func bricPerformanceTest(native: Bool, seed: Int = 11111) {
-        let ctx = JSContext()
+        let ctx = JXContext()
         ctx.installConsole()
 
         var rnd = RandomNumberGeneratorWithSeed(seed: seed)
@@ -405,7 +401,7 @@ final class JudoTests: XCTestCase {
             let str = try bric.encodedString()
             dbg("testing with JSON size:", str.count)
 
-            let ob1 = try XCTUnwrap(JSValue(json: str, in: ctx))
+            let ob1 = try XCTUnwrap(JXValue(json: str, in: ctx))
             let ob2 = try ctx.encode(bric)
 
             XCTAssertEqual(try ob1.toDecodable(ofType: Bric.self), try ob2.toDecodable(ofType: Bric.self))
@@ -415,11 +411,11 @@ final class JudoTests: XCTestCase {
 
         measure {
             do {
-                let ob: JSValue?
+                let ob: JXValue?
                 if native {
-                    ob = try JSValueEncoder(context: ctx).encode(bric)
+                    ob = try JXValueEncoder(context: ctx).encode(bric)
                 } else {
-                    ob = JSValue(json: try bric.encodedString(), in: ctx)
+                    ob = JXValue(json: try bric.encodedString(), in: ctx)
                 }
                 XCTAssertNotNil(ob)
             } catch {
@@ -429,7 +425,7 @@ final class JudoTests: XCTestCase {
     }
 }
 
-public extension JSContext {
+public extension JXContext {
     static let sheetjs = Bundle.module.url(forResource: "xlsx", withExtension: "js", subdirectory: "Resources/JavaScript")
     static let jszipjs = Bundle.module.url(forResource: "jszip", withExtension: "js", subdirectory: "Resources/JavaScript")
 
@@ -442,7 +438,7 @@ public extension JSContext {
     }
 
     /// Runs `xlsx.js` to set up the VM.
-    @discardableResult func installSheetJS() throws -> JSValue {
+    @discardableResult func installSheetJS() throws -> JXValue {
         try installJSZip()
 
         guard let sheetjsURL = Self.sheetjs else {
@@ -455,11 +451,11 @@ public extension JSContext {
 
 /// Uses `JXKit` and `SheetJS`
 open class SheetJS {
-    open var ctx: JSContext
-    let sheet_to_json: JSValue
+    open var ctx: JXContext
+    let sheet_to_json: JXValue
 
     public init() throws {
-        self.ctx = JSContext()
+        self.ctx = JXContext()
 
         // ctx.installExports(require: true)
         // ctx.installConsole()
@@ -490,7 +486,7 @@ open class SheetJS {
     public func extractSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> [Sheet] {
 
         // encode the array arguments
-        let buffer = JSValue(newArrayBufferWithBytes: data, in: ctx)
+        let buffer = JXValue(newArrayBufferWithBytes: data, in: ctx)
         let readopts = try ctx.encode(readopts)
         let jsonopts = try ctx.encode(jsonopts)
         let sheet = try ctx.trying {
