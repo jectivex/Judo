@@ -24,10 +24,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: swift package generate-xcodeproj
       - run: |
             xcodebuild clean test \
-              -scheme "Judo" \
+              -scheme "Judo-Package" \
               -sdk "iphonesimulator14.4" \
               -destination "OS=14.4,name=iPhone 12 Mini" \
               ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO
@@ -38,10 +37,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: swift package generate-xcodeproj
       - run: |
             xcodebuild clean test \
-              -scheme "Judo" \
+              -scheme "Judo-Package" \
               -sdk "appletvsimulator14.3" \
               -destination "OS=14.3,name=Apple TV" \
               ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO
