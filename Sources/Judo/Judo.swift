@@ -1,28 +1,29 @@
-import JXSwift
+import JXKit
 import BricBrac
 import MiscKit
+import Dispatch
 
 public enum JudoErrors : Error {
     /// The URL could not be found in the resources
     case cannotLoadScriptURL
     /// An evanuation error occurred
-    case evaluationError(ScriptObject)
+    case evaluationError(JSValue)
     /// The specified encoding name is invalid
     case invalidEncoding(String)
 }
 
-public extension ScriptContext {
+public extension JSContext {
     /// Installs a top-level "global" variable.
     func installExports(require: Bool) {
         if self.global["exports"].isObject == false {
-            let exports = ScriptObject(newObjectIn: self)
+            let exports = JSValue(newObjectIn: self)
             self.global["exports"] = exports
         }
 
         if require == true && self.global["require"].isUndefined == true {
-            self.global["require"] = ScriptObject(newFunctionIn: self) { ctx, this, args in
+            self.global["require"] = JSValue(newFunctionIn: self) { ctx, this, args in
                 dbg("require", args)
-                return ScriptObject(nullIn: ctx)
+                return JSValue(nullIn: ctx)
             }
         }
     }
@@ -31,9 +32,9 @@ public extension ScriptContext {
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/console
     func installConsole() {
-        let console = ScriptObject(newObjectIn: self)
+        let console = JSValue(newObjectIn: self)
         let createLog = { (level: UInt8) in
-            ScriptObject(newFunctionIn: self) { ctx, this, args in
+            JSValue(newFunctionIn: self) { ctx, this, args in
                 // debugPrint(arguments)
                 dbg(level: level,
                     level == 0 ? "DEBUG" : level == 1 ? "LOG" : level == 2 ? "INFO" : level == 3 ? "WARN" : level == 4 ? "ERROR": "UNKNOWN",
@@ -49,7 +50,7 @@ public extension ScriptContext {
                     args.count > 9 ? args[9] : nil,
                     args.count > 10 ? args[10] : nil
                 )
-                return ScriptObject(nullIn: ctx)
+                return JSValue(nullIn: ctx)
             }
         }
 
@@ -66,17 +67,17 @@ public extension ScriptContext {
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
     func installTimer(immediate: Bool = false) {
-        let setTimeout = ScriptObject(newFunctionIn: self) { ctx, this, arguments in
+        let setTimeout = JSValue(newFunctionIn: self) { ctx, this, arguments in
             var args = arguments
             if args.count < 1 {
                 dbg("error in setTimeout: too few arguments")
-                return ScriptObject(nullIn: ctx)
+                return JSValue(nullIn: ctx)
             }
 
             let f = args.removeFirst()
             if !f.isFunction {
                 dbg("first argument to setTimeout was not a function")
-                return ScriptObject(nullIn: ctx)
+                return JSValue(nullIn: ctx)
             }
 
             let t = !args.isEmpty ? args.removeFirst().doubleValue ?? 0.0 : 0.0
@@ -104,10 +105,10 @@ public extension ScriptContext {
 
 
             // return the item identifier for the work item so we can cancel it later
-            return ScriptObject(double: Double(timerID), in: ctx)
+            return JSValue(double: Double(timerID), in: ctx)
         }
 
-        let clearTimeout = ScriptObject(newFunctionIn: self) { ctx, this, arguments in
+        let clearTimeout = JSValue(newFunctionIn: self) { ctx, this, arguments in
             if let timeoutID = arguments.first?.doubleValue {
                 globalTimerQueue.sync {
                     if let item = globalTimers.removeValue(forKey: Int(timeoutID)) {
@@ -115,7 +116,7 @@ public extension ScriptContext {
                     }
                 }
             }
-            return ScriptObject(nullIn: ctx)
+            return JSValue(nullIn: ctx)
         }
 
         self.global["setTimeout"] = setTimeout

@@ -5,10 +5,12 @@
 //  Created by Marc Prud'hommeaux on 5/20/21.
 //
 
-import SwiftJS
+import JXKit
 import MiscKit
+import Foundation
+import Dispatch
 
-extension ScriptContext {
+extension JSContext {
     static let browserfs = Bundle.module.url(forResource: "browserfs", withExtension: "js", subdirectory: "Resources/JavaScript")
 
     /// Installs the `browserfs.js` system and creates a mount to the native file system at the given point.
@@ -32,7 +34,7 @@ extension ScriptContext {
         // e.g.:
         // appendFile: function() { nativeFS.appendFile(...arguments); },
         // appendFileSync: function() { nativeFS.appendFileSync(...arguments); },
-        let nativeFS = ScriptObject(newObjectIn: self)
+        let nativeFS = JSValue(newObjectIn: self)
         func addStub(name: String, sync makeSyncVersion: Bool = false, passthrough: String = "", impl: @escaping JSObjectCallAsFunctionCallback) {
             let syncName = name + "Sync"
 
@@ -46,14 +48,14 @@ extension ScriptContext {
                 ]
 
                 // we only actually implement the synchronous versions
-                nativeFS[name + "Sync"] = ScriptObject(newFunctionIn: self) { ctx, this, arguments in
+                nativeFS[name + "Sync"] = JSValue(newFunctionIn: self) { ctx, this, arguments in
                     return try impl(ctx, this, arguments)
                 }
                 implMethods += [
                     "\(syncName): function() { \(clog) return \(passthrough)(nativeFS.\(syncName)(...arguments)); }"
                 ]
             } else {
-                nativeFS[name] = ScriptObject(newFunctionIn: self) { ctx, this, arguments in
+                nativeFS[name] = JSValue(newFunctionIn: self) { ctx, this, arguments in
                     return try impl(ctx, this, arguments)
                 }
                 implMethods += [
@@ -125,31 +127,31 @@ private extension FileManager {
     /// ```getName(): string;```
     static let getName: JSObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("getName", args)
-        return ScriptObject(string: "KanjiVM", in: ctx)
+        return JSValue(string: "KanjiVM", in: ctx)
     }
 
     /// Is this filesystem read-only?
     static let isReadOnly: JSObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("isReadOnly", args)
-        return ScriptObject(bool: false, in: ctx)
+        return JSValue(bool: false, in: ctx)
     }
 
     /// Does the filesystem support optional symlink/hardlink-related commands?
     static let supportsLinks: JSObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsLinks", args)
-        return ScriptObject(bool: true, in: ctx)
+        return JSValue(bool: true, in: ctx)
     }
 
     /// Does the filesystem support optional property-related commands?
     static let supportsProps: JSObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsProps", args)
-        return ScriptObject(bool: false, in: ctx)
+        return JSValue(bool: false, in: ctx)
     }
 
     /// Does the filesystem support the optional synchronous interface?
     static let supportsSynch: JSObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsSynch", args)
-        return ScriptObject(bool: true, in: ctx)
+        return JSValue(bool: true, in: ctx)
     }
 
     /// ```diskSpace(p: string, cb: (total: number, free: number) => any): void;```
@@ -246,7 +248,7 @@ private extension FileManager {
             throw err("first argument was not a string")
         }
         let exists = FileManager.default.fileExists(atPath: p)
-        return ScriptObject(bool: exists, in: ctx)
+        return JSValue(bool: exists, in: ctx)
     }
 
     /// ```linkSync(srcpath: string, dstpath: string): void;```
@@ -262,7 +264,7 @@ private extension FileManager {
         }
 
         try FileManager.default.linkItem(atPath: srcpath, toPath: dstpath)
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```mkdirSync(p: string, mode: number): void;```
@@ -281,7 +283,7 @@ private extension FileManager {
         ]
 
         try FileManager.default.createDirectory(atPath: p, withIntermediateDirectories: true, attributes: attrs)
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```openSync(p: string, flag: FileFlag, mode: number): File;```
@@ -317,7 +319,7 @@ private extension FileManager {
             throw err("first fname argument was not a string")
         }
 
-        let encoding: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
+        let encoding: JSValue? = args.isEmpty ? nil : args.removeFirst()
 
         let flag: Double? = args.isEmpty ? nil : args.removeFirst().doubleValue
 
@@ -326,10 +328,10 @@ private extension FileManager {
             guard let contents = try String(data: data, encoding: parseEncoding(from: enc)) else {
                 throw err("Unable to load string with encoding \(enc)")
             }
-            return ScriptObject(string: contents, in: ctx)
+            return JSValue(string: contents, in: ctx)
         } else {
             if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *) {
-                return ScriptObject(newArrayBufferWithBytes: data, in: ctx)
+                return JSValue(newArrayBufferWithBytes: data, in: ctx)
             } else {
                 throw err("unsupported platform for data load")
             }
@@ -345,9 +347,9 @@ private extension FileManager {
         }
         let files = try FileManager.default.contentsOfDirectory(atPath: p)
 
-        var array = ScriptObject(newArrayIn: ctx)
+        var array = JSValue(newArrayIn: ctx)
         for (index, path) in files.enumerated() {
-            array[index] = ScriptObject(string: path, in: ctx)
+            array[index] = JSValue(string: path, in: ctx)
         }
         return array
     }
@@ -385,7 +387,7 @@ private extension FileManager {
         }
 
         try FileManager.default.moveItem(atPath: oldPath, toPath: newPath)
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```rmdirSync(p: string): void;```
@@ -403,7 +405,7 @@ private extension FileManager {
             throw err("path is not a directory")
         }
 
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```statSync(p: string, isLstat: boolean | null): Stats;```
@@ -424,7 +426,7 @@ private extension FileManager {
 
         let attrs = try FileManager.default.attributesOfItem(atPath: p)
 
-        let array = ScriptObject(newArrayIn: ctx)
+        let array = JSValue(newArrayIn: ctx)
         // "new fs.FS.Stats(\(itemType), \(size), \(mode), \(atime), \(mtime), \(ctime))"
 
         let type = attrs[.type] as? FileAttributeType ?? FileAttributeType.typeRegular
@@ -438,12 +440,12 @@ private extension FileManager {
 
         //dbg("stat", p, "type:", itemType, "size:", size, "mode:", mode, "atime:", atime, "mtime:", mtime) // , "ctime:", ctime)
 
-        array[0] = ScriptObject(double: Double(itemType?.rawValue ?? 0), in: ctx)
-        array[1] = ScriptObject(double: size, in: ctx)
-        array[2] = ScriptObject(double: mode, in: ctx)
-        array[3] = ScriptObject(double: atime * 1000.0, in: ctx)
-        array[4] = ScriptObject(double: mtime * 1000.0, in: ctx)
-        array[5] = ScriptObject(double: ctime * 1000.0, in: ctx)
+        array[0] = JSValue(double: Double(itemType?.rawValue ?? 0), in: ctx)
+        array[1] = JSValue(double: size, in: ctx)
+        array[2] = JSValue(double: mode, in: ctx)
+        array[3] = JSValue(double: atime * 1000.0, in: ctx)
+        array[4] = JSValue(double: mtime * 1000.0, in: ctx)
+        array[5] = JSValue(double: ctime * 1000.0, in: ctx)
         return array
     }
 
@@ -464,7 +466,7 @@ private extension FileManager {
         }
 
         try FileManager.default.createSymbolicLink(atPath: srcpath, withDestinationPath: dstpath)
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```truncateSync(p: string, len: number): void;```
@@ -489,7 +491,7 @@ private extension FileManager {
             throw err("first argument was not a string")
         }
         try FileManager.default.removeItem(atPath: p)
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     /// ```utimesSync(p: string, atime: Date, mtime: Date): void;```
@@ -519,17 +521,17 @@ private extension FileManager {
         }
 
         let encoding: String? = args.isEmpty || !args[0].isString ? nil : args.removeFirst().stringValue
-        let flag: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
-        let mode: ScriptObject? = args.isEmpty ? nil : args.removeFirst()
+        let flag: JSValue? = args.isEmpty ? nil : args.removeFirst()
+        let mode: JSValue? = args.isEmpty ? nil : args.removeFirst()
 
         if data.isString, let str = data.stringValue, let encoding = encoding {
             try str.write(toFile: fname, atomically: false, encoding: parseEncoding(from: encoding))
         } else if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *), data.isArrayBuffer, let contents = data.copyBytes() {
             try contents.write(to: URL(fileURLWithPath: fname))
         } else {
-            throw ScriptContext.Errors.minimumSystemVersion
+            throw JSContext.Errors.minimumSystemVersion
         }
-        return ScriptObject(undefinedIn: ctx)
+        return JSValue(undefinedIn: ctx)
     }
 
     private static func parseEncoding(from encodingName: String) throws -> String.Encoding {
