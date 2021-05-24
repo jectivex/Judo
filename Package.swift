@@ -21,6 +21,6 @@ let package = Package(
         .testTarget(
             name: "JudoTests",
             dependencies: ["Judo"],
-            resources: [.process("Resources")]),
+            resources: [.process("TestResources")]),
     ]
 )
