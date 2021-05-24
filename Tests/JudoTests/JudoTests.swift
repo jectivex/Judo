@@ -1,7 +1,9 @@
 import XCTest
 @testable import Judo
 
+//import JavaScriptCore
 import JXKit
+
 import MiscKit
 
 final class JudoTests: XCTestCase {
@@ -255,72 +257,69 @@ final class JudoTests: XCTestCase {
     }
 
     func testLoadSheetJS() throws {
+        // re-use a single SheetJS for bechmarking
+        let sheetjs = try SheetJS()
 
-        let ctx = JSContext()
+        measure {
+            do {
+                try checkSheetJSSamples(sheetjs)
+            } catch {
+                XCTFail("\(error)")
+            }
+        }
+    }
 
-        try ctx.trying { ctx.installConsole() }
-        try ctx.trying { ctx.installTimer() }
-        try ctx.installBrowserFS(mountPoint: "/")
-        try ctx.installSheetJS()
+    // sample data for equality check
 
-        XCTAssertNoThrow(try ctx.eval(script: "XLSX.read('');"))
-        //XCTAssertThrowsError(try ctx.eval(script: "XLSX.read(null);")) // “TypeError: null is not an object (evaluating \'f.slice\')”
+    let xlsSample: Bric = [
+        ["name":"Sheet1",
+         "data": [
+            ["Column A","Column B","Column C","Column D","Column E"],
+            [1,"A",5.1,"black",11.2],
+            [2,"B",9.4334,"red",20.8668],
+            [3,"C",4.323,"white",11.646],
+            [4,"D",2.33,"grey",8.66],
+            [5,"E",1.11,"green",7.220000000000001],
+            [6,"F",3.2,"blue",12.4],
+            [7,"G",9.99,"yellow",26.98],
+            [8,"H",8.32,"orangle",24.64],
+            [9,"I",1024.1,"purple",2057.2],
+            [10,"J",22,"maroon",54]
+         ]],
+        ["name":"Sheet3",
+         "data":[
+            ["COL1","COL2"],
+            ["XXX","YYY"]
+         ]],
+        ["name":"Sheet4",
+         "data":[
+            ["AAA","BBB","CCC"],
+            [nil,"DDD","EEE","FFF"],
+            [nil,nil,"GGG","HHH","III"],
+            [nil,nil,nil,1,2,3]
+         ]]
+    ]
 
-        //XCTAssertNoThrow(try ctx.eval(script: "fs.readFileSync('/etc/hosts');"))
+    let xlsxSample: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"], [1,"A",5.1,"black"], [2,"B",9.4334,"red"], [3,"C",4.323,"white"], [4,"D",2.33,"grey"], [5,"E",1.11,"green"], [6,"F",3.2,"blue"], [7,"G",9.99,"yellow"], [8,"H",8.32,"orangle"], [9,"I",1024.1,"purple"], [10,"J",22,"maroon"]]]]
 
-        //XCTAssertNoThrow(try ctx.eval(script: "XLSX.readFile('/etc/hosts');"))
+    let csvSample: Bric = [["data":[["A","B","C"], [1,"true","'xyz","abc'"]],"name":"Sheet1"]]
 
-        XCTAssertTrue(try ctx.eval(script: "XLSX.utils").isObject)
-        XCTAssertTrue(try ctx.eval(script: "XLSX.utils.sheet_to_json").isFunction)
+    let htmlSample: Bric = [ ["name":"Sheet1","data":[["Years","CBR","Years","CBR"], ["1950–1955",36.9,"2000–2005",21], ["1955–1960",35.4,"2005–2010",20.3], ["1960–1965",35.2,"2010–2015",19.5], ["1965–1970",34,"2015–2020",18.5], ["1970–1975",31.4,"2020–2025",17.5], ["1975–1980",28.5,"2025–2030",16.6], ["1980–1985",27.7,"2030–2035",16], ["1985–1990",27.4,"2035–2040",15.5], ["1990–1995",24.2,"2040–2045",15], ["1995–2000",22.2,"2045–2050",14.6]]]]
 
-        for ext in ["xls", "xlsx", "csv", "html"] {
+    func checkSheetJSSamples(_ sheetjs: SheetJS, extensions: [String] = ["xls", "xlsx", "csv", "html"]) throws {
+        for ext in extensions {
             guard let demoURL = Bundle.module.url(forResource: "demo", withExtension: ext, subdirectory: "Resources/sheets") else {
                 return XCTFail("could not load demo.\(ext)")
             }
 
             let ropts = SheetJS.ParsingOptions(type: ext == "csv" ? .array : .buffer)
 
-            let json = try SheetJS.shared.get().parseSheet(data: try Data(contentsOf: demoURL), readopts: ropts).toBric(native: true) ?? .nul
+            let json = try sheetjs.sheetToJSON(data: try Data(contentsOf: demoURL), readopts: ropts).toBric(native: true) ?? .nul
 
-            let xls: Bric = [
-                ["name":"Sheet1",
-                 "data": [
-                    ["Column A","Column B","Column C","Column D","Column E"],
-                    [1,"A",5.1,"black",11.2],
-                    [2,"B",9.4334,"red",20.8668],
-                    [3,"C",4.323,"white",11.646],
-                    [4,"D",2.33,"grey",8.66],
-                    [5,"E",1.11,"green",7.220000000000001],
-                    [6,"F",3.2,"blue",12.4],
-                    [7,"G",9.99,"yellow",26.98],
-                    [8,"H",8.32,"orangle",24.64],
-                    [9,"I",1024.1,"purple",2057.2],
-                    [10,"J",22,"maroon",54]
-                 ]],
-                ["name":"Sheet3",
-                 "data":[
-                    ["COL1","COL2"],
-                    ["XXX","YYY"]
-                 ]],
-                ["name":"Sheet4",
-                 "data":[
-                    ["AAA","BBB","CCC"],
-                    [nil,"DDD","EEE","FFF"],
-                    [nil,nil,"GGG","HHH","III"],
-                    [nil,nil,nil,1,2,3]
-                 ]]
-            ]
-
-            let xlsx: Bric = [["name":"Sheet1","data":[["Column A","Column B","Column C","Column D","Column E"], [1,"A",5.1,"black"], [2,"B",9.4334,"red"], [3,"C",4.323,"white"], [4,"D",2.33,"grey"], [5,"E",1.11,"green"], [6,"F",3.2,"blue"], [7,"G",9.99,"yellow"], [8,"H",8.32,"orangle"], [9,"I",1024.1,"purple"], [10,"J",22,"maroon"]]]]
-
-            let csv: Bric = [["data":[["A","B","C"], [1,"true","'xyz","abc'"]],"name":"Sheet1"]]
-
-            let html: Bric = [ ["name":"Sheet1","data":[["Years","CBR","Years","CBR"], ["1950–1955",36.9,"2000–2005",21], ["1955–1960",35.4,"2005–2010",20.3], ["1960–1965",35.2,"2010–2015",19.5], ["1965–1970",34,"2015–2020",18.5], ["1970–1975",31.4,"2020–2025",17.5], ["1975–1980",28.5,"2025–2030",16.6], ["1980–1985",27.7,"2030–2035",16], ["1985–1990",27.4,"2035–2040",15.5], ["1990–1995",24.2,"2040–2045",15], ["1995–2000",22.2,"2045–2050",14.6]]]]
-
-            let expected = ext == "csv" ? csv
-                : ext == "html" ? html
-                : ext == "xlsx" ? xlsx
-                : ext == "xls" ? xls
+            let expected = ext == "csv" ? csvSample
+                : ext == "html" ? htmlSample
+                : ext == "xlsx" ? xlsxSample
+                : ext == "xls" ? xlsSample
                 : Bric.nul
 
             XCTAssertEqual(json, expected)
@@ -443,53 +442,66 @@ public extension JSContext {
     }
 
     /// Runs `xlsx.js` to set up the VM.
-    func installSheetJS() throws {
+    @discardableResult func installSheetJS() throws -> JSValue {
         try installJSZip()
 
         guard let sheetjsURL = Self.sheetjs else {
             throw JudoErrors.cannotLoadScriptURL
         }
-        try self.eval(url: sheetjsURL)
+
+        return try self.eval(url: sheetjsURL)
     }
 }
 
-/// Uses `JXSwift` and `SheetJS`
-public final class SheetJS {
-    public static let shared = Result { try SheetJS() }
-    let ctx: JSContext
+/// An API that permits the loading
+public protocol SheetJSAPI {
+    func sheetToJSON(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions) throws -> JSValue
+}
 
-    private init(mnt: String = "/sys/") throws {
+/// Uses `JXKit` and `SheetJS`
+public final class SheetJS : SheetJSAPI {
+    let ctx: JSContext
+    let sheet_to_json: JSValue
+
+    public init(mnt: String? = nil) throws {
         self.ctx = JSContext()
 
         // ctx.installExports(require: true)
         ctx.installConsole()
         ctx.installTimer(immediate: true)
 
-        try ctx.installBrowserFS(mountPoint: mnt)
+        if let mnt = mnt {
+            try ctx.installBrowserFS(mountPoint: mnt)
+        }
+
         try ctx.installSheetJS()
+
+        self.sheet_to_json = try ctx.eval(script: """
+            (function(buffer, readopts, jsonopts) {
+                const workbook = XLSX.read(buffer, readopts);
+                return workbook.SheetNames.map(sheetName => {
+                    return {
+                        name: sheetName,
+                        data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], jsonopts)
+                    };
+                });
+            })
+            """)
+
+        if !sheet_to_json.isFunction {
+            throw err("Could not load XLSX.utils.sheet_to_json in SheetJS")
+        }
 
     }
 
-    public func parseSheet(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> JSValue {
-        ctx["buffer"] = JSValue(newArrayBufferWithBytes: data, in: ctx)
-        defer { ctx["buffer"] = JSValue(undefinedIn: ctx) }
-        ctx["readopts"] = JSValue(json: try readopts.encodedString(), in: ctx) ?? JSValue(undefinedIn: ctx)
-        defer { ctx["readopts"] = JSValue(undefinedIn: ctx) }
+    public func sheetToJSON(data: Data, readopts: SheetJS.ParsingOptions, jsonopts: SheetJS.JSONOptions = SheetJS.JSONOptions(header: 1)) throws -> JSValue {
 
-        ctx["jsonopts"] = JSValue(json: try jsonopts.encodedString(), in: ctx) ?? JSValue(undefinedIn: ctx)
-        defer { ctx["jsonopts"] = JSValue(undefinedIn: ctx) }
-
-        let sheet = try ctx.eval(script: """
-        (function() {
-            const workbook = XLSX.read(buffer, readopts);
-            return workbook.SheetNames.map(sheetName => {
-                return {
-                    name: sheetName,
-                    data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], jsonopts)
-                };
-            });
-        })()
-        """)
+        let buffer = JSValue(newArrayBufferWithBytes: data, in: ctx)
+        let readopts = try ctx.encode(readopts)
+        let jsonopts = try ctx.encode(jsonopts)
+        let sheet = try ctx.trying {
+            sheet_to_json.call(withArguments: [buffer, readopts, jsonopts])
+        }
 
         return sheet
     }

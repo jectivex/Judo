@@ -11,20 +11,20 @@
         }
       },
       {
+        "package": "JXKit",
+        "repositoryURL": "https://github.com/jectivex/JXKit.git",
+        "state": {
+          "branch": "main",
+          "revision": "1c87d37afb0c071fcc0df87c2640504d9ce50065",
+          "version": null
+        }
+      },
+      {
         "package": "MiscKit",
         "repositoryURL": "https://github.com/glimpseio/MiscKit.git",
         "state": {
           "branch": "main",
           "revision": "8428673a1b36314313a8633944dd7c28043be5f9",
-          "version": null
-        }
-      },
-      {
-        "package": "SwiftJS",
-        "repositoryURL": "https://github.com/jectivex/SwiftJS.git",
-        "state": {
-          "branch": "main",
-          "revision": "e3f3fbffda61efda3ea64bd9c6e290096bf42f7a",
           "version": null
         }
       }
