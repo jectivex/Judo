@@ -53,8 +53,8 @@ jobs:
         run: swift test
 
   Windows10:
-    #if: false # JavaScriptCore not available on Windows
-    #needs: [Linux] # Linux must pass first
+    if: false # JavaScriptCore not available on Windows
+    needs: [Linux] # Linux must pass first
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
