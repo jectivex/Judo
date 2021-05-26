@@ -35,7 +35,7 @@ extension JXContext {
         // appendFile: function() { nativeFS.appendFile(...arguments); },
         // appendFileSync: function() { nativeFS.appendFileSync(...arguments); },
         let nativeFS = JXValue(newObjectIn: self)
-        func addStub(name: String, sync makeSyncVersion: Bool = false, passthrough: String = "", impl: @escaping JSObjectCallAsFunctionCallback) {
+        func addStub(name: String, sync makeSyncVersion: Bool = false, passthrough: String = "", impl: @escaping JXObjectCallAsFunctionCallback) {
             let syncName = name + "Sync"
 
             let clog = "" // "console.log('\(name)', ...arguments); " // debug logging of API calls
@@ -125,43 +125,43 @@ private extension FileManager {
     }
 
     /// ```getName(): string;```
-    static let getName: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let getName: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("getName", args)
         return JXValue(string: "KanjiVM", in: ctx)
     }
 
     /// Is this filesystem read-only?
-    static let isReadOnly: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let isReadOnly: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("isReadOnly", args)
         return JXValue(bool: false, in: ctx)
     }
 
     /// Does the filesystem support optional symlink/hardlink-related commands?
-    static let supportsLinks: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let supportsLinks: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsLinks", args)
         return JXValue(bool: true, in: ctx)
     }
 
     /// Does the filesystem support optional property-related commands?
-    static let supportsProps: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let supportsProps: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsProps", args)
         return JXValue(bool: false, in: ctx)
     }
 
     /// Does the filesystem support the optional synchronous interface?
-    static let supportsSynch: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let supportsSynch: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("supportsSynch", args)
         return JXValue(bool: true, in: ctx)
     }
 
     /// ```diskSpace(p: string, cb: (total: number, free: number) => any): void;```
-    static let diskSpace: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let diskSpace: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("diskSpace", args)
         throw err("Unsupported: diskSpace")
     }
 
     /// ```appendFileSync(fname: string, data: string | Buffer, encoding: string | null, flag: FileFlag, mode: number): void;```
-    static let appendFileSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let appendFileSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("appendFileSync", args)
         var args = args
         guard !args.isEmpty, let fname = args.removeFirst().stringValue else {
@@ -191,7 +191,7 @@ private extension FileManager {
     }
 
     /// ```chmodSync(p: string, isLchmod: boolean, mode: number): void;```
-    static let chmodSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let chmodSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("chmodSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -214,7 +214,7 @@ private extension FileManager {
     }
 
     /// ```chownSync(p: string, isLchown: boolean, uid: number, gid: number): void;```
-    static let chownSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let chownSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("chownSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -241,7 +241,7 @@ private extension FileManager {
     }
 
     /// ```existsSync(p: string): boolean;```
-    static let existsSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let existsSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("existsSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -252,7 +252,7 @@ private extension FileManager {
     }
 
     /// ```linkSync(srcpath: string, dstpath: string): void;```
-    static let linkSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let linkSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("linkSync", args)
         var args = args
         guard !args.isEmpty, let srcpath = args.removeFirst().stringValue else {
@@ -268,7 +268,7 @@ private extension FileManager {
     }
 
     /// ```mkdirSync(p: string, mode: number): void;```
-    static let mkdirSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let mkdirSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("mkdirSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -287,7 +287,7 @@ private extension FileManager {
     }
 
     /// ```openSync(p: string, flag: FileFlag, mode: number): File;```
-    static let openSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let openSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("openSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -312,7 +312,7 @@ private extension FileManager {
     }
 
     /// ```readFileSync(fname: string, encoding: string | null, flag: FileFlag): any;```
-    static let readFileSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let readFileSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         //dbg("readFileSync", args)
         var args = args
         guard !args.isEmpty, let fname = args.removeFirst().stringValue else {
@@ -339,7 +339,7 @@ private extension FileManager {
     }
 
     /// ```readdirSync(p: string): string[];```
-    static let readdirSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let readdirSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         //dbg("readdirSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -355,7 +355,7 @@ private extension FileManager {
     }
 
     /// ```readlinkSync(p: string): string;```
-    static let readlinkSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let readlinkSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         //dbg("readlinkSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -365,7 +365,7 @@ private extension FileManager {
     }
 
     /// ```realpathSync(p: string, cache: {[path: string]: string}): string;```
-    static let realpathSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let realpathSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("realpathSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -375,7 +375,7 @@ private extension FileManager {
     }
 
     /// ```renameSync(oldPath: string, newPath: string): void;```
-    static let renameSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let renameSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("renameSync", args)
         var args = args
         guard !args.isEmpty, let oldPath = args.removeFirst().stringValue else {
@@ -391,7 +391,7 @@ private extension FileManager {
     }
 
     /// ```rmdirSync(p: string): void;```
-    static let rmdirSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let rmdirSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("rmdirSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -409,7 +409,7 @@ private extension FileManager {
     }
 
     /// ```statSync(p: string, isLstat: boolean | null): Stats;```
-    static let statSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let statSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         //dbg("statSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -450,7 +450,7 @@ private extension FileManager {
     }
 
     /// ```symlinkSync(srcpath: string, dstpath: string, type: string): void;```
-    static let symlinkSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let symlinkSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("symlinkSync", args)
         var args = args
         guard !args.isEmpty, let srcpath = args.removeFirst().stringValue else {
@@ -470,7 +470,7 @@ private extension FileManager {
     }
 
     /// ```truncateSync(p: string, len: number): void;```
-    static let truncateSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let truncateSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("truncateSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -484,7 +484,7 @@ private extension FileManager {
     }
 
     /// ```unlinkSync(p: string): void;```
-    static let unlinkSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let unlinkSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("unlinkSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -495,7 +495,7 @@ private extension FileManager {
     }
 
     /// ```utimesSync(p: string, atime: Date, mtime: Date): void;```
-    static let utimesSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let utimesSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         dbg("utimesSync", args)
         var args = args
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
@@ -506,7 +506,7 @@ private extension FileManager {
     }
 
     /// ```writeFileSync(fname: string, data: string | Buffer, encoding: string | null, flag: FileFlag, mode: number): void;```
-    static let writeFileSync: JSObjectCallAsFunctionCallback = { ctx, this, args in
+    static let writeFileSync: JXObjectCallAsFunctionCallback = { ctx, this, args in
         //dbg("writeFileSync", args)
         var args = args
         guard !args.isEmpty, let fname = args.removeFirst().stringValue else {

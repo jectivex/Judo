@@ -28,37 +28,47 @@ public extension JXContext {
         }
     }
 
+    /// The level of `console.log`
+    enum ConsoleLogLevel: UInt8 {
+        case debug = 0, log = 1, info = 2, warn = 3, error = 4
+    }
+
+    /// The default `Console.log` function, which merely routes console log messages
+    static func defaultLog(for level: ConsoleLogLevel) -> JXObjectCallAsFunctionCallback {
+        return { ctx, this, args in
+            dbg(level: level.rawValue,
+                args.count > 0 ? args[0] : nil,
+                args.count > 1 ? args[1] : nil,
+                args.count > 2 ? args[2] : nil,
+                args.count > 3 ? args[3] : nil,
+                args.count > 4 ? args[4] : nil,
+                args.count > 5 ? args[5] : nil,
+                args.count > 6 ? args[6] : nil,
+                args.count > 7 ? args[7] : nil,
+                args.count > 8 ? args[8] : nil,
+                args.count > 9 ? args[9] : nil,
+                args.count > 10 ? args[10] : nil
+            )
+            return JXValue(nullIn: ctx)
+        }
+    }
+
     /// Installs `console.log` and other functions to output to `os_log` via `MiscKit.dbg`
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/console
-    func installConsole() {
+    func installConsole(
+        debug: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .debug),
+        log: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .log),
+        info: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .info),
+        warn: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .warn),
+        error: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .error)) {
         let console = JXValue(newObjectIn: self)
-        let createLog = { (level: UInt8) in
-            JXValue(newFunctionIn: self) { ctx, this, args in
-                // debugPrint(arguments)
-                dbg(level: level,
-                    level == 0 ? "DEBUG" : level == 1 ? "LOG" : level == 2 ? "INFO" : level == 3 ? "WARN" : level == 4 ? "ERROR": "UNKNOWN",
-                    args.count > 0 ? args[0] : nil,
-                    args.count > 1 ? args[1] : nil,
-                    args.count > 2 ? args[2] : nil,
-                    args.count > 3 ? args[3] : nil,
-                    args.count > 4 ? args[4] : nil,
-                    args.count > 5 ? args[5] : nil,
-                    args.count > 6 ? args[6] : nil,
-                    args.count > 7 ? args[7] : nil,
-                    args.count > 8 ? args[8] : nil,
-                    args.count > 9 ? args[9] : nil,
-                    args.count > 10 ? args[10] : nil
-                )
-                return JXValue(nullIn: ctx)
-            }
-        }
 
-        console["debug"] = createLog(0)
-        console["log"] = createLog(1)
-        console["info"] = createLog(2)
-        console["warn"] = createLog(3)
-        console["error"] = createLog(4)
+        console["debug"] = JXValue(newFunctionIn: self, callback: debug)
+        console["log"] = JXValue(newFunctionIn: self, callback: log)
+        console["info"] = JXValue(newFunctionIn: self, callback: info)
+        console["warn"] = JXValue(newFunctionIn: self, callback: warn)
+        console["error"] = JXValue(newFunctionIn: self, callback: error)
 
         self.global["console"] = console
     }
