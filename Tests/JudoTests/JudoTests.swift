@@ -1,22 +1,163 @@
 import XCTest
-import Judo
+@testable import Judo
 import MiscKit
+
+
+/// A running count of all the contexts that have been created and not destroyed
+private final class JXDebugContext : JXContext {
+    static var debugContextCount = 0
+
+    override init() {
+        super.init()
+        Self.debugContextCount += 1
+    }
+
+    deinit {
+        Self.debugContextCount -= 1
+    }
+}
+
+/// A running count of all the values that have been created and not destroyed
+private final class JXDebugValue : JXValue {
+    static var debugValueCount = 0
+
+    override init(env: JXContext, value: OpaquePointer) {
+        Self.debugValueCount += 1
+        super.init(env: env, value: value)
+    }
+
+    deinit {
+        Self.debugValueCount -= 1
+    }
+}
+
+
 
 final class JudoTests: XCTestCase {
     let res = Bundle.module.resourceURL
     let fm = FileManager.default
 
+    /// Ensure that contexts are destroued as expected
+    func testContextDeinit() throws {
+        XCTAssertEqual(0, JXDebugContext.debugContextCount)
+
+        defer {
+            XCTAssertEqual(0, JXDebugContext.debugContextCount, "context did not deinit")
+        }
+
+        do {
+            let ctx = JXDebugContext()
+            XCTAssertEqual(1, JXDebugContext.debugContextCount)
+        }
+    }
+
     func testCallbackFunctions() throws {
-        let context = JXContext()
+        XCTAssertEqual(0, JXDebugContext.debugContextCount)
 
-        context.installConsole()
-        try context.eval(script: "console.log('test');")
+        defer {
+            XCTAssertEqual(0, JXDebugContext.debugContextCount, "context did not deinit")
+        }
 
-        context.installTimer()
-        try context.eval(script: "setTimeout(function() { console.log('call', 'back'); }, 2);")
+        do {
+            let ctx = JXDebugContext()
+            XCTAssertEqual(1, JXDebugContext.debugContextCount)
 
-        context.installExports(require: true)
-        try context.eval(script: "exports.x")
+            var warnings: [String?] = []
+
+            // set up a callback for the warning console
+            ctx.installConsole(warn: { ctx, this, args in
+                warnings.append(args.map(\.stringValue).compactMap({ $0 }).joined())
+                return JXValue(undefinedIn: ctx)
+            })
+
+            // clear the custom console
+            //defer { ctx.global.removeProperty("console") }
+
+            try ctx.eval(script: "console.log('test log');")
+
+            if true {
+                try ctx.eval(script: "console.warn('test2');")
+                XCTAssertEqual(["test2"], warnings)
+                warnings.removeAll()
+            }
+
+            // set up a timer to use a manual dispatch mechanism
+            ctx.installTimer(immediate: true) { t, item in
+                DispatchQueue.global(qos: .userInitiated)
+                    .asyncAfter(deadline: .now() + .milliseconds(Int(t)),
+                                execute: item)
+            }
+
+            if false {
+                XCTAssertEqual(0, ctx.pendingTimeouts.count)
+                // set a timer for a callback, so we can force it to execute immediately
+                let tid0 = try ctx.eval(script: "setTimeout(function() { console.warn('Call', '–', 'Back'); }, 1.000);")
+                XCTAssertEqual(1, ctx.pendingTimeouts.count)
+
+                ctx.crushTimeouts()
+
+//                XCTAssertEqual(0, tid0.doubleValue)
+//                XCTAssertEqual([], warnings)
+//                XCTAssertEqual(1, ctx.pendingTimeouts.count)
+//
+//                while let tid = ctx.processNextTimeout() {
+//                    dbg("flushed timeout:", tid)
+//                }
+//
+//                XCTAssertEqual(0, ctx.pendingTimeouts.count)
+//
+//                XCTAssertEqual(["Call–Back"], warnings)
+//                warnings.removeAll()
+            }
+
+            if false {
+                XCTAssertEqual(0, ctx.pendingTimeouts.count)
+                let tid1 = try ctx.eval(script: "setTimeout(function() { console.warn('call', 'back2'); }, 2);").doubleValue
+                XCTAssertEqual(1, ctx.pendingTimeouts.count)
+
+                if let tid = tid1 { // clear the timeout
+                    dbg("clearing timeout \(tid)")
+                    try ctx.eval(script: "clearTimeout(\(tid))")
+                }
+
+                while let tid = ctx.processNextTimeout() {
+                    dbg("flushed timeout:", tid)
+                }
+
+                XCTAssertEqual([], ctx.pendingTimeouts)
+                XCTAssertEqual([], warnings) // the callback to log the message should have been cancelled
+            }
+
+            // lastly, check that a scheduled timeout actually executes succwssfully
+            if false {
+                let xpc = expectation(description: "__cbfun")
+
+                XCTAssertEqual(0, JXDebugValue.debugValueCount)
+                do {
+                    let cb = JXDebugValue(newFunctionIn: ctx) { ctx, _, _ in
+                        xpc.fulfill()
+                        return JXValue(undefinedIn: ctx)
+                    }
+
+                    XCTAssertEqual(1, JXDebugValue.debugValueCount)
+                    XCTAssertEqual(0, ctx.pendingTimeouts.count)
+                    ctx["setTimeout"].call(withArguments: [cb, JXValue(double: 0.01, in: ctx)])
+                    XCTAssertEqual(1, ctx.pendingTimeouts.count)
+                    XCTAssertEqual(1, JXDebugValue.debugValueCount)
+
+                    wait(for: [xpc], timeout: 1.00)
+                    XCTAssertEqual(0, ctx.pendingTimeouts.count)
+                }
+
+                XCTAssertEqual(0, JXDebugValue.debugValueCount)
+            }
+
+            do {
+                ctx.installExports(require: true)
+                try ctx.eval(script: "exports.x")
+            }
+        }
+
     }
 
     @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)

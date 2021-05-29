@@ -19,7 +19,7 @@ extension JXValue {
         if native {
             return try toDecodable(ofType: Bric.self)
         } else {
-            return try toJSON().map({ try Bric.parse($0) })
+            return try Bric.parse(toJSON())
         }
     }
 }

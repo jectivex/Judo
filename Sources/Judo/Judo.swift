@@ -34,7 +34,7 @@ public extension JXContext {
     }
 
     /// The default `Console.log` function, which merely routes console log messages
-    static func defaultLog(for level: ConsoleLogLevel) -> JXObjectCallAsFunctionCallback {
+    static func console(for level: ConsoleLogLevel) -> JXObjectCallAsFunctionCallback {
         return { ctx, this, args in
             dbg(level: level.rawValue,
                 args.count > 0 ? args[0] : nil,
@@ -57,11 +57,11 @@ public extension JXContext {
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/console
     func installConsole(
-        debug: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .debug),
-        log: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .log),
-        info: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .info),
-        warn: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .warn),
-        error: @escaping JXObjectCallAsFunctionCallback = defaultLog(for: .error)) {
+        debug: @escaping JXObjectCallAsFunctionCallback = console(for: .debug),
+        log: @escaping JXObjectCallAsFunctionCallback = console(for: .log),
+        info: @escaping JXObjectCallAsFunctionCallback = console(for: .info),
+        warn: @escaping JXObjectCallAsFunctionCallback = console(for: .warn),
+        error: @escaping JXObjectCallAsFunctionCallback = console(for: .error)) {
         let console = JXValue(newObjectIn: self)
 
         console["debug"] = JXValue(newFunctionIn: self, callback: debug)
@@ -73,10 +73,17 @@ public extension JXContext {
         self.global["console"] = console
     }
 
-    /// Installs `setTimeout` to use `DispatchQueue.global.asyncAfter`
-    ///
+    /// The standard scheduler that uses a default DispatchQueue.global()
+    static func dispatchScheduler(qos: DispatchQoS.QoSClass) -> (Double, DispatchWorkItem) -> () {
+        { t, item in
+            DispatchQueue.global(qos: qos).asyncAfter(deadline: .now() + .milliseconds(Int(t)), execute: item)
+        }
+    }
+
+    /// Installs `setTimeout` to use `DispatchQueue.global.asyncAfter` with the `default` QoS.
     /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
-    func installTimer(immediate: Bool = false) {
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func installTimer(immediate: Bool = false, scheduler: @escaping (Double, DispatchWorkItem) -> () = JXContext.dispatchScheduler(qos: .default)) {
         let setTimeout = JXValue(newFunctionIn: self) { ctx, this, arguments in
             var args = arguments
             if args.count < 1 {
@@ -84,49 +91,42 @@ public extension JXContext {
                 return JXValue(nullIn: ctx)
             }
 
-            let f = args.removeFirst()
-            if !f.isFunction {
+            let cb = args.removeFirst()
+            if !cb.isFunction {
                 dbg("first argument to setTimeout was not a function")
                 return JXValue(nullIn: ctx)
             }
 
             let t = !args.isEmpty ? args.removeFirst().doubleValue ?? 0.0 : 0.0
 
-            var timerID: Int = 0
-            globalTimerQueue.sync {
-                timerID = globalTimerCount
-                globalTimerCount += 1
+            let timerID = ctx.globalTimeoutsCounter
+            ctx.globalTimeoutsCounter += 1
 
-                let item = DispatchWorkItem {
-                    _ = globalTimerQueue.sync {
-                        globalTimers.removeValue(forKey: timerID)
-                    }
-                    f.call(withArguments: args, this: nil)
+            let tid = JXValue(double: Double(timerID), in: ctx)
+
+            let item = DispatchWorkItem {
+                dbg("dispatching timerID:", timerID)
+                if ctx.globalTimeouts.hasProperty(tid) {
+                    ctx.globalTimeouts.deleteProperty(tid)
                 }
-
-                globalTimers[globalTimerCount] = item
-
-//                if t <= 0 {
-//                    item.perform()
-//                } else {
-                    DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(Int(t)), execute: item)
-//                }
+                cb.call(withArguments: [])
             }
 
+            // remember the global timer ID in order to be able to cancel it or execute ahead of schedule
+            ctx.addTimeoutFunction(id: timerID, item: item)
 
-            // return the item identifier for the work item so we can cancel it later
+            // perform the scheduling
+            scheduler(t, item)
+
+            // return the item identifier for the work item so it can cancelled
             return JXValue(double: Double(timerID), in: ctx)
         }
 
         let clearTimeout = JXValue(newFunctionIn: self) { ctx, this, arguments in
-            if let timeoutID = arguments.first?.doubleValue {
-                globalTimerQueue.sync {
-                    if let item = globalTimers.removeValue(forKey: Int(timeoutID)) {
-                        item.cancel()
-                    }
-                }
+            if let timeoutID = arguments.first?.doubleValue, !timeoutID.isNaN {
+                ctx.flushTimeout(id: Int(timeoutID), perform: false)
             }
-            return JXValue(nullIn: ctx)
+            return JXValue(undefinedIn: ctx)
         }
 
         self.global["setTimeout"] = setTimeout
@@ -136,9 +136,94 @@ public extension JXContext {
             self.global["setImmediate"] = setTimeout
         }
     }
+
+    /// The identifiers of all the pending timeouts (unordered)
+    var pendingTimeouts: [Int] {
+        globalTimeouts.properties.compactMap(Int.init)
+    }
+
+    @available(*, deprecated, message: "TESTING")
+    func crushTimeouts() {
+        assert(self.removeProperty("__globalTimeouts") == wip(true))
+    }
+
+    /// Flushes any pending timeouts immediately.
+    /// - Parameter perform: whether to perform (or cancel) the next timeout
+    /// - Returns: the timeout ID that was flushed
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func processNextTimeout(perform: Bool = true) -> Int? {
+        guard let nextTimeoutID = pendingTimeouts.sorted().first else {
+            return nil
+        }
+
+        dbg("processing timeout ID", nextTimeoutID)
+        flushTimeout(id: nextTimeoutID, perform: perform)
+        return nextTimeoutID
+    }
+
+    /// Flushes the next timeout, either invoking or cancelling it, and clears it from the global dictionary
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    private func flushTimeout(id key: Int, perform: Bool) {
+        precondition(globalTimeouts.isArray)
+        dbg("flushing timeout ID", key)
+
+        let callback = globalTimeouts[key]
+
+        globalTimeouts.deleteProperty(JXValue(double: Double(key), in: self))
+        //globalTimeouts = JXValue(undefinedIn: self)
+        
+        // now execute the callback function with `false` (which means cancel)
+        if callback.isFunction {
+            // clear the timeout from the array
+            callback.call(withArguments: [JXValue(bool: perform, in: self)]) // call with false means to cancel it
+        } else {
+            dbg("no timeout found for id:", key, callback, "keys", pendingTimeouts)
+        }
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    private func addTimeoutFunction(id key: Int, item: DispatchWorkItem) {
+        let callback = JXValue(newFunctionIn: self) { ctx, this, args in
+            if item.isCancelled == false {
+                if args.first?.boolValue == true {
+                    item.perform()
+                }
+                item.cancel() // always cancel so we don't execute twice
+            }
+            //ctx.globalTimeouts.deleteProperty(JXValue(double: Double(key), in: ctx))
+            return JXValue(undefinedIn: ctx)
+        }
+
+        if !globalTimeouts.isArray {
+            globalTimeouts = JXValue(newArrayIn: self)
+        }
+        precondition(globalTimeouts.isArray)
+        globalTimeouts[key] = callback
+    }
+
+    internal var globalTimeouts: JXValue {
+        get { global["__globalTimeouts"] }
+        set {
+            precondition(newValue.isArray)
+            global["__globalTimeouts"] = newValue
+        }
+    }
+
+    /// The internal vairable tracking the gobal timers
+    internal var globalTimeoutsCounter: Int {
+        get {
+            let value = global["__globalTimeoutsCounter"]
+            if value.isNumber, let num = value.doubleValue {
+                return Int(num)
+            } else {
+                return 0
+            }
+        }
+
+        set {
+            global["__globalTimeoutsCounter"] = JXValue(double: Double(newValue), in: self)
+        }
+    }
 }
 
-private var globalTimers: [Int: DispatchWorkItem] = [:]
-private var globalTimerCount = 0
 private var globalTimerQueue = DispatchQueue(label: "globalTimers")
-
