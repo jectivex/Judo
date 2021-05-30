@@ -211,7 +211,6 @@ public extension JXContext {
         }
     }
 
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     private func addTimeoutFunction(id key: Int, item: DispatchWorkItem) {
         let callback = JXValue(newFunctionIn: self) { ctx, this, args in
             if item.isCancelled == false {
