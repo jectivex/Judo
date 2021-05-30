@@ -12,12 +12,44 @@ public enum JudoErrors : Error {
     case invalidEncoding(String)
 }
 
+public extension JXValue {
+    /// Adds a function with the given name to this value, which should be an object type.
+    /// - Parameters:
+    ///   - name: the name of the function
+    ///   - shim: whether to insert a shim to make the function appear as a true JavaScript function (which permits `apply` to be invoked on it)
+    ///   - callback: the callback for the function
+    @discardableResult func addFunction(_ name: String, shim: Bool = true, callback: @escaping JXObjectCallAsFunctionCallback) throws -> JXValue? {
+        if !isObject { return nil }
+
+        let fval = JXValue(newFunctionIn: env, callback: callback)
+
+        if !shim {
+            self[name] = fval // set the object posing as a function directly
+        } else {
+            // when we want to be treated just like a read JS function, we need to put in a shim function first
+            let shimName = "__shim_" + name
+            self[shimName] = fval
+            self[name] = try env.eval("(function() { this.\(shimName)(...arguments); })")
+        }
+
+        return fval
+    }
+}
+
 public extension JXContext {
+
     /// Installs a top-level "global" variable.
-    func installExports(require: Bool) {
+    func installExports(require: Bool, global installGlobal: Bool) {
         if self.global["exports"].isObject == false {
             let exports = JXValue(newObjectIn: self)
             self.global["exports"] = exports
+        }
+
+        if installGlobal {
+            if self.global["global"].isObject == false {
+                let exports = JXValue(newObjectIn: self)
+                self.global["global"] = exports
+            }
         }
 
         if require == true && self.global["require"].isUndefined == true {
@@ -61,14 +93,14 @@ public extension JXContext {
         log: @escaping JXObjectCallAsFunctionCallback = console(for: .log),
         info: @escaping JXObjectCallAsFunctionCallback = console(for: .info),
         warn: @escaping JXObjectCallAsFunctionCallback = console(for: .warn),
-        error: @escaping JXObjectCallAsFunctionCallback = console(for: .error)) {
+        error: @escaping JXObjectCallAsFunctionCallback = console(for: .error)) throws {
         let console = JXValue(newObjectIn: self)
 
-        console["debug"] = JXValue(newFunctionIn: self, callback: debug)
-        console["log"] = JXValue(newFunctionIn: self, callback: log)
-        console["info"] = JXValue(newFunctionIn: self, callback: info)
-        console["warn"] = JXValue(newFunctionIn: self, callback: warn)
-        console["error"] = JXValue(newFunctionIn: self, callback: error)
+        try console.addFunction("debug", callback: debug)
+        try console.addFunction("log", callback: log)
+        try console.addFunction("info", callback: info)
+        try console.addFunction("warn", callback: warn)
+        try console.addFunction("error", callback: error)
 
         self.global["console"] = console
     }

@@ -63,7 +63,7 @@ final class JudoTests: XCTestCase {
             var warnings: [String?] = []
 
             // set up a callback for the warning console
-            ctx.installConsole(warn: { ctx, this, args in
+            try ctx.installConsole(warn: { ctx, this, args in
                 warnings.append(args.map(\.stringValue).compactMap({ $0 }).joined())
                 return JXValue(undefinedIn: ctx)
             })
@@ -153,8 +153,9 @@ final class JudoTests: XCTestCase {
             }
 
             do {
-                ctx.installExports(require: true)
+                ctx.installExports(require: true, global: true)
                 try ctx.eval(script: "exports.x")
+                try ctx.eval(script: "global.x")
             }
         }
 
@@ -164,7 +165,7 @@ final class JudoTests: XCTestCase {
     func testFileBrowser() throws {
         let ctx = JXContext()
 
-        try ctx.trying { ctx.installConsole() }
+        try ctx.trying { try ctx.installConsole() }
         try ctx.trying { ctx.installTimer() }
 
         // must not have require for BrowserFS to install correctly
@@ -492,18 +493,18 @@ final class JudoTests: XCTestCase {
 
     func testCodableDirectPerformance() throws {
         // [Time, seconds] average: 0.037, relative standard deviation: 8.080%, values: [0.044274, 0.039708, 0.035382, 0.033773, 0.035470, 0.034955, 0.035116, 0.036936, 0.038773, 0.035343]
-        bricPerformanceTest(native: true)
+        try bricPerformanceTest(native: true)
     }
 
     func testCodableJSONPerformance() throws {
         // [Time, seconds] average: 0.035, relative standard deviation: 7.715%, values: [0.042545, 0.034334, 0.033519, 0.033150, 0.032862, 0.034576, 0.034465, 0.033346, 0.033869, 0.035678]
-        bricPerformanceTest(native: false)
+        try bricPerformanceTest(native: false)
     }
 
 
-    func bricPerformanceTest(native: Bool, seed: Int = 11111) {
+    func bricPerformanceTest(native: Bool, seed: Int = 11111) throws {
         let ctx = JXContext()
-        ctx.installConsole()
+        try ctx.installConsole()
 
         var rnd = RandomNumberGeneratorWithSeed(seed: seed)
 
