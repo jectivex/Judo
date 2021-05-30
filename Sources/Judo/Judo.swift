@@ -114,7 +114,6 @@ public extension JXContext {
 
     /// Installs `setTimeout` to use `DispatchQueue.global.asyncAfter` with the `default` QoS.
     /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func installTimer(immediate: Bool = false, scheduler: @escaping (Double, DispatchWorkItem) -> () = JXContext.dispatchScheduler(qos: .default)) {
         let setTimeout = JXValue(newFunctionIn: self) { ctx, this, arguments in
             var args = arguments
