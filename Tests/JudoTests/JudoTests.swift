@@ -49,6 +49,7 @@ final class JudoTests: XCTestCase {
         }
     }
 
+    @available(macOS 10.13, iOS 13.0, watchOS 6.0, tvOS 11.0, *)
     func testCallbackFunctions() throws {
         XCTAssertEqual(0, JXDebugContext.debugContextCount)
 
