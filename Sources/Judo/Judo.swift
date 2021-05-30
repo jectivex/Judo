@@ -97,7 +97,7 @@ public extension JXContext {
                 return JXValue(nullIn: ctx)
             }
 
-            let t = !args.isEmpty ? args.removeFirst().doubleValue ?? 0.0 : 0.0
+            let t = !args.isEmpty ? args.removeFirst().numberValue ?? 0.0 : 0.0
 
             let timerID = ctx.globalTimeoutsCounter
             ctx.globalTimeoutsCounter += 1
@@ -123,7 +123,7 @@ public extension JXContext {
         }
 
         let clearTimeout = JXValue(newFunctionIn: self) { ctx, this, arguments in
-            if let timeoutID = arguments.first?.doubleValue, !timeoutID.isNaN {
+            if let timeoutID = arguments.first?.numberValue, !timeoutID.isNaN {
                 ctx.flushTimeout(id: Int(timeoutID), perform: false)
             }
             return JXValue(undefinedIn: ctx)
@@ -185,7 +185,7 @@ public extension JXContext {
     private func addTimeoutFunction(id key: Int, item: DispatchWorkItem) {
         let callback = JXValue(newFunctionIn: self) { ctx, this, args in
             if item.isCancelled == false {
-                if args.first?.boolValue == true {
+                if args.first?.booleanValue == true {
                     item.perform()
                 }
                 item.cancel() // always cancel so we don't execute twice
@@ -213,7 +213,7 @@ public extension JXContext {
     internal var globalTimeoutsCounter: Int {
         get {
             let value = global["__globalTimeoutsCounter"]
-            if value.isNumber, let num = value.doubleValue {
+            if value.isNumber, let num = value.numberValue {
                 return Int(num)
             } else {
                 return 0

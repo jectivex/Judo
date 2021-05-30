@@ -179,11 +179,11 @@ private extension FileManager {
             throw err("third encoding argument was not a string")
         }
 
-        guard !args.isEmpty, let flag = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let flag = args.removeFirst().numberValue else {
             throw err("fourth flag argument was not a number")
         }
 
-        guard !args.isEmpty, let mode = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let mode = args.removeFirst().numberValue else {
             throw err("fifth mode argument was not a number")
         }
 
@@ -206,7 +206,7 @@ private extension FileManager {
             throw err("second isLchmod argument was not a boolean")
         }
 
-        guard !args.isEmpty, let mode = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let mode = args.removeFirst().numberValue else {
             throw err("fourth mode argument was not a number")
         }
 
@@ -229,11 +229,11 @@ private extension FileManager {
             throw err("second isLchown argument was not a boolean")
         }
 
-        guard !args.isEmpty, let uid = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let uid = args.removeFirst().numberValue else {
             throw err("third uid argument was not a number")
         }
 
-        guard !args.isEmpty, let gid = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let gid = args.removeFirst().numberValue else {
             throw err("fourth gid argument was not a number")
         }
 
@@ -274,7 +274,7 @@ private extension FileManager {
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
         }
-        guard !args.isEmpty, let mode = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let mode = args.removeFirst().numberValue else {
             throw err("second argument was not a number")
         }
 
@@ -294,11 +294,11 @@ private extension FileManager {
             throw err("first argument was not a string")
         }
 
-        guard !args.isEmpty, let flag = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let flag = args.removeFirst().numberValue else {
             throw err("second flag argument was not a number")
         }
 
-        guard !args.isEmpty, let mode = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let mode = args.removeFirst().numberValue else {
             throw err("third mode argument was not a number")
         }
 
@@ -321,7 +321,7 @@ private extension FileManager {
 
         let encoding: JXValue? = args.isEmpty ? nil : args.removeFirst()
 
-        let flag: Double? = args.isEmpty ? nil : args.removeFirst().doubleValue
+        let flag: Double? = args.isEmpty ? nil : args.removeFirst().numberValue
 
         let data = try Data(contentsOf: URL(fileURLWithPath: fname), options: [])
         if let encoding = encoding, encoding.isString, let enc = encoding.stringValue {
@@ -476,7 +476,7 @@ private extension FileManager {
         guard !args.isEmpty, let p = args.removeFirst().stringValue else {
             throw err("first argument was not a string")
         }
-        guard !args.isEmpty, let len = args.removeFirst().doubleValue else {
+        guard !args.isEmpty, let len = args.removeFirst().numberValue else {
             throw err("second argument was not a number")
         }
 

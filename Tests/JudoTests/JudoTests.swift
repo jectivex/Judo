@@ -31,8 +31,6 @@ private final class JXDebugValue : JXValue {
     }
 }
 
-
-
 final class JudoTests: XCTestCase {
     let res = Bundle.module.resourceURL
     let fm = FileManager.default
@@ -96,23 +94,25 @@ final class JudoTests: XCTestCase {
 
                 ctx.crushTimeouts()
 
-//                XCTAssertEqual(0, tid0.doubleValue)
-//                XCTAssertEqual([], warnings)
-//                XCTAssertEqual(1, ctx.pendingTimeouts.count)
-//
-//                while let tid = ctx.processNextTimeout() {
-//                    dbg("flushed timeout:", tid)
-//                }
-//
-//                XCTAssertEqual(0, ctx.pendingTimeouts.count)
-//
-//                XCTAssertEqual(["Call–Back"], warnings)
-//                warnings.removeAll()
+                if false {
+                    XCTAssertEqual(0, tid0.numberValue)
+                    XCTAssertEqual([], warnings)
+                    XCTAssertEqual(1, ctx.pendingTimeouts.count)
+
+                    while let tid = ctx.processNextTimeout() {
+                        dbg("flushed timeout:", tid)
+                    }
+
+                    XCTAssertEqual(0, ctx.pendingTimeouts.count)
+
+                    XCTAssertEqual(["Call–Back"], warnings)
+                    warnings.removeAll()
+                }
             }
 
             if false {
                 XCTAssertEqual(0, ctx.pendingTimeouts.count)
-                let tid1 = try ctx.eval(script: "setTimeout(function() { console.warn('call', 'back2'); }, 2);").doubleValue
+                let tid1 = try ctx.eval(script: "setTimeout(function() { console.warn('call', 'back2'); }, 2);").numberValue
                 XCTAssertEqual(1, ctx.pendingTimeouts.count)
 
                 if let tid = tid1 { // clear the timeout
@@ -128,7 +128,7 @@ final class JudoTests: XCTestCase {
                 XCTAssertEqual([], warnings) // the callback to log the message should have been cancelled
             }
 
-            // lastly, check that a scheduled timeout actually executes succwssfully
+            // lastly, check that a scheduled timeout actually executes successfully
             if false {
                 let xpc = expectation(description: "__cbfun")
 
@@ -181,18 +181,18 @@ final class JudoTests: XCTestCase {
             try ctx.eval(script: "fs.statSync('\(mnt ? mount : "")\(path)').isDirectory()")
         }
 
-        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('/').isDirectory()").boolValue)
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('/').isDirectory()").booleanValue)
         XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
 
         // this will return our own Stats impl…
-        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)').isDirectory()").boolValue)
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)').isDirectory()").booleanValue)
         XCTAssertThrowsError(try ctx.eval(script: "fs.statSync('\(mount)/xyzxyz').isDirectory()")) // ENOENT: No such file or directory., \'/xyzxyz\'
 
-        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isFile()").boolValue)
-        //XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isDirectory()").boolValue)
+        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isFile()").booleanValue)
+        //XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/').isDirectory()").booleanValue)
 
-        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isDirectory()").boolValue)
-        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isFile()").boolValue)
+        XCTAssertEqual(false, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isDirectory()").booleanValue)
+        XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(mount)/etc/hosts').isFile()").booleanValue)
 
 
         // write a random string to a temporary file, then read it back and see if it works
@@ -259,7 +259,7 @@ final class JudoTests: XCTestCase {
                 XCTAssertEqual(randomString, try roundtripFile(sync: sync, path: path, string: randomString, encoding: enc).stringValue)
 
                 XCTAssertNoThrow(try ctx.eval(script: "fs.statSync('\(path)').isFile()"))
-                XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(path)').isFile()").boolValue)
+                XCTAssertEqual(true, try ctx.eval(script: "fs.statSync('\(path)').isFile()").booleanValue)
 
                 let data = try XCTUnwrap(try ctx.eval(script: "fs.readFileSync('\(path)')").copyBytes())
 
@@ -268,7 +268,7 @@ final class JudoTests: XCTestCase {
 
                 do { // check that stat's size is correct
                     let size = try XCTUnwrap(attrs[.size] as? Int)
-                    let jsize = try XCTUnwrap(try ctx.eval(script: "fs.statSync('\(path)').size").doubleValue)
+                    let jsize = try XCTUnwrap(try ctx.eval(script: "fs.statSync('\(path)').size").numberValue)
 
                     XCTAssertEqual(data.count, size)
                     XCTAssertEqual(size, .init(jsize))
@@ -377,7 +377,7 @@ final class JudoTests: XCTestCase {
         let ctx = JXContext()
 
         let htpy = JXValue(newFunctionIn: ctx) { ctx, this, args in
-            JXValue(double: sqrt(pow(args.first?["x"].doubleValue ?? 0.0, 2) + pow(args.first?["y"].doubleValue ?? 0.0, 2)), in: ctx)
+            JXValue(double: sqrt(pow(args.first?["x"].numberValue ?? 0.0, 2) + pow(args.first?["y"].numberValue ?? 0.0, 2)), in: ctx)
         }
 
         struct Args : Encodable {
@@ -386,7 +386,7 @@ final class JudoTests: XCTestCase {
         }
 
         func hfun(_ args: Args) throws -> Double? {
-            htpy.call(withArguments: [try ctx.encode(args)]).doubleValue
+            htpy.call(withArguments: [try ctx.encode(args)]).numberValue
         }
 
         XCTAssertEqual(5, try hfun(Args(x: 3, y: 4)))
