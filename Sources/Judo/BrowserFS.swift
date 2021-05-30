@@ -526,7 +526,7 @@ private extension FileManager {
 
         if data.isString, let str = data.stringValue, let encoding = encoding {
             try str.write(toFile: fname, atomically: false, encoding: parseEncoding(from: encoding))
-        } else if #available(macOS 10.12, iOS 10.0, tvOS 10.0, *), data.isArrayBuffer, let contents = data.copyBytes() {
+        } else if #available(macOS 10.12, macCatalyst 13.0, iOS 10.0, tvOS 10.0, *), data.isArrayBuffer, let contents = data.copyBytes() {
             try contents.write(to: URL(fileURLWithPath: fname))
         } else {
             throw JXContext.Errors.minimumSystemVersion

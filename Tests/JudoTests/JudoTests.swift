@@ -624,6 +624,7 @@ open class JXSheet {
         }
     }
 
+    @available(macOS 10.12, iOS 10.0, tvOS 10.0, *)
     public func extractSheet(data: Data, readopts: JXSheet.ParsingOptions, jsonopts: JXSheet.JSONOptions = JXSheet.JSONOptions(header: 1)) throws -> [Sheet] {
 
         // encode the array arguments
