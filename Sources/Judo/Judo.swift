@@ -182,7 +182,6 @@ public extension JXContext {
     /// Flushes any pending timeouts immediately.
     /// - Parameter perform: whether to perform (or cancel) the next timeout
     /// - Returns: the timeout ID that was flushed
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func processNextTimeout(perform: Bool = true) -> Int? {
         guard let nextTimeoutID = pendingTimeouts.sorted().first else {
             return nil
@@ -194,7 +193,6 @@ public extension JXContext {
     }
 
     /// Flushes the next timeout, either invoking or cancelling it, and clears it from the global dictionary
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     private func flushTimeout(id key: Int, perform: Bool) {
         precondition(globalTimeouts.isArray)
         dbg("flushing timeout ID", key)
