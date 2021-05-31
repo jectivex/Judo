@@ -155,12 +155,6 @@ final class JudoTests: XCTestCase {
 
                 XCTAssertEqual(0, JXDebugValue.debugValueCount)
             }
-
-            do {
-                ctx.installExports(require: true, global: true)
-                try ctx.eval(script: "exports.x")
-                try ctx.eval(script: "global.x")
-            }
         }
 
     }

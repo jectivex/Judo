@@ -38,28 +38,6 @@ public extension JXValue {
 
 public extension JXContext {
 
-    /// Installs a top-level "global" variable.
-    func installExports(require: Bool, global installGlobal: Bool) {
-        if self.global["exports"].isObject == false {
-            let exports = JXValue(newObjectIn: self)
-            self.global["exports"] = exports
-        }
-
-        if installGlobal {
-            if self.global["global"].isObject == false {
-                let exports = JXValue(newObjectIn: self)
-                self.global["global"] = exports
-            }
-        }
-
-        if require == true && self.global["require"].isUndefined == true {
-            self.global["require"] = JXValue(newFunctionIn: self) { ctx, this, args in
-                dbg("require", args)
-                return JXValue(nullIn: ctx)
-            }
-        }
-    }
-
     /// The level of `console.log`
     enum ConsoleLogLevel: UInt8 {
         case debug = 0, log = 1, info = 2, warn = 3, error = 4
