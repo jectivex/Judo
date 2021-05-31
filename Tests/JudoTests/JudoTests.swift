@@ -2,13 +2,16 @@ import XCTest
 @testable import Judo
 import MiscKit
 
-
 /// A running count of all the contexts that have been created and not destroyed
 private final class JXDebugContext : JXContext {
     static var debugContextCount = 0
 
-    override init() {
-        super.init()
+    convenience init() {
+        self.init(group: JXContextGroup())
+    }
+
+    override init(group: JXContextGroup) {
+        super.init(group: group)
         Self.debugContextCount += 1
     }
 
@@ -16,6 +19,7 @@ private final class JXDebugContext : JXContext {
         Self.debugContextCount -= 1
     }
 }
+
 
 /// A running count of all the values that have been created and not destroyed
 private final class JXDebugValue : JXValue {
