@@ -174,6 +174,7 @@ final class JudoTests: XCTestCase {
         let mount = "/sys"
 
         try ctx.installBrowserFS(mountPoint: "\(mount)")
+        while ctx.processNextTimeout() != nil { } // flush timeouts
 
         XCTAssertEqual("[object Object]", try ctx.eval(script: "new fs.FS.Stats()").stringValue)
         XCTAssertEqual("false", try ctx.eval(script: "new fs.FS.Stats().isDirectory()").stringValue)
