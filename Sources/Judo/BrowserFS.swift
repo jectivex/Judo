@@ -11,17 +11,10 @@ import Foundation
 import Dispatch
 
 extension JXContext {
-    static let browserfs = Bundle.module.url(forResource: "browserfs", withExtension: "js", subdirectory: "Resources/JavaScript")
-
     /// Installs the `browserfs.js` system and creates a mount to the native file system at the given point.
     /// - Parameter mountPoint: the mount point for the file system
     public func installBrowserFS(mountPoint: String? = "/sys") throws {
-        guard let browserfsURL = Self.browserfs else {
-            throw JudoErrors.cannotLoadScriptURL
-        }
-
-        //dbg("loading browserfsURL:", browserfsURL.lastPathComponent)
-        try self.eval(url: browserfsURL)
+        let _ = try installModule(named: "browserfs", in: .module)
 
         try self.eval(script: """
             var mfs = new BrowserFS.FileSystem.MountableFileSystem(),
