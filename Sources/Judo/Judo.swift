@@ -18,7 +18,7 @@ public extension JXValue {
     ///   - name: the name of the function
     ///   - shim: whether to insert a shim to make the function appear as a true JavaScript function (which permits `apply` to be invoked on it)
     ///   - callback: the callback for the function
-    @discardableResult func addFunction(_ name: String, shim: Bool = true, callback: @escaping JXObjectCallAsFunctionCallback) throws -> JXValue? {
+    @discardableResult func addFunction(_ name: String, shim: Bool = true, callback: @escaping JXFunction) throws -> JXValue? {
         if !isObject { return nil }
 
         let fval = JXValue(newFunctionIn: env, callback: callback)
@@ -44,7 +44,7 @@ public extension JXContext {
     }
 
     /// The default `Console.log` function, which merely routes console log messages
-    static func console(for level: ConsoleLogLevel) -> JXObjectCallAsFunctionCallback {
+    static func console(for level: ConsoleLogLevel) -> JXFunction {
         return { ctx, this, args in
             dbg(level: level.rawValue,
                 args.count > 0 ? args[0] : nil,
@@ -67,11 +67,11 @@ public extension JXContext {
     ///
     /// https://developer.mozilla.org/en-US/docs/Web/API/console
     func installConsole(
-        debug: @escaping JXObjectCallAsFunctionCallback = console(for: .debug),
-        log: @escaping JXObjectCallAsFunctionCallback = console(for: .log),
-        info: @escaping JXObjectCallAsFunctionCallback = console(for: .info),
-        warn: @escaping JXObjectCallAsFunctionCallback = console(for: .warn),
-        error: @escaping JXObjectCallAsFunctionCallback = console(for: .error)) throws {
+        debug: @escaping JXFunction = console(for: .debug),
+        log: @escaping JXFunction = console(for: .log),
+        info: @escaping JXFunction = console(for: .info),
+        warn: @escaping JXFunction = console(for: .warn),
+        error: @escaping JXFunction = console(for: .error)) throws {
         let console = JXValue(newObjectIn: self)
 
         try console.addFunction("debug", callback: debug)
