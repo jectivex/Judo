@@ -26,7 +26,7 @@ public extension JXValue {
         if !shim {
             self[name] = fval // set the object posing as a function directly
         } else {
-            // when we want to be treated just like a read JS function, we need to put in a shim function first
+            // when we want to be treated just like a real JS function, we need to put in a shim function first
             let shimName = "__shim_" + name
             self[shimName] = fval
             self[name] = try env.eval("(function() { this.\(shimName)(...arguments); })")

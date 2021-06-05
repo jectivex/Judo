@@ -156,9 +156,24 @@ final class JudoTests: XCTestCase {
                 XCTAssertEqual(0, JXDebugValue.debugValueCount)
             }
         }
-
     }
 
+    func testCanvas() throws {
+        let ctx = JXContext()
+        let api = AbstractCanvasAPI()
+        let canvas = Canvas(env: ctx, delegate: api)
+
+        do { // check font property
+            XCTAssertEqual(true, canvas.font.isUndefined)
+            XCTAssertEqual(nil, api.font)
+            try ctx.eval(this: canvas, script: "this.font = 'abc';")
+            XCTAssertEqual("abc", canvas.font.stringValue)
+            // XCTAssertEqual("abc", api.font) // TODO: pass-through values to the canvas
+        }
+
+        XCTAssertEqual("function", try ctx.eval(this: canvas, script: "typeof this.measureText").stringValue)
+    }
+    
     @available(macOS 10.12, macCatalyst 13.0, iOS 10.0, tvOS 10.0, *)
     func testFileBrowser() throws {
         let ctx = JXContext()
@@ -325,7 +340,7 @@ final class JudoTests: XCTestCase {
         }
 
 
-        for _ in 1...20 {
+        for _ in 1...5 {
             try rt(["q":nil] as Bric)
 
             try rt([:] as Bric)
