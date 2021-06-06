@@ -504,11 +504,10 @@ open class Canvas : JXValue {
             return env.undefined()
         }
 
-
         try addFunction("clearRect", shim: shim) { env, this, args in
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            let f = delegate.clearRect(x: narg(at: 0), y: narg(at: 1), w: narg(at: 2), h: narg(at: 3))
+            delegate.clearRect(x: narg(at: 0), y: narg(at: 1), w: narg(at: 2), h: narg(at: 3))
             return env.undefined()
         }
 
@@ -522,45 +521,10 @@ open class Canvas : JXValue {
             return env.undefined()
         }
 
-        try addFunction("createConicGradient", shim: shim) { env, this, args in
-            let f = delegate.createConicGradient
-            return env.undefined()
-        }
-
-        try addFunction("createImageData", shim: shim) { env, this, args in
-            let f = delegate.createImageData
-            return env.undefined()
-        }
-
-        try addFunction("createLinearGradient", shim: shim) { env, this, args in
-            let f = delegate.createLinearGradient
-            return env.undefined()
-        }
-
-        try addFunction("createPattern", shim: shim) { env, this, args in
-            let f = delegate.createPattern
-            return env.undefined()
-        }
-
-        try addFunction("createRadialGradient", shim: shim) { env, this, args in
-            let f = delegate.createRadialGradient
-            return env.undefined()
-        }
-
-        try addFunction("drawFocusIfNeeded", shim: shim) { env, this, args in
-            let f = delegate.drawFocusIfNeeded
-            return env.undefined()
-        }
-
-        try addFunction("drawImage", shim: shim) { env, this, args in
-            let f = delegate.drawImage
-            return env.undefined()
-        }
-
         try addFunction("ellipse", shim: shim) { env, this, args in
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            let f = delegate.ellipse(x: narg(at: 0), y: narg(at: 1), radiusX: narg(at: 2), radiusY: narg(at: 3), rotation: narg(at: 4), startAngle: narg(at: 5), endAngle: narg(at: 6))
+            delegate.ellipse(x: narg(at: 0), y: narg(at: 1), radiusX: narg(at: 2), radiusY: narg(at: 3), rotation: narg(at: 4), startAngle: narg(at: 5), endAngle: narg(at: 6))
             return env.undefined()
         }
 
@@ -580,42 +544,19 @@ open class Canvas : JXValue {
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
             func sarg(at index: Int) -> String { arg(at: index)?.stringValue ?? "" }
-            let f = delegate.fillText(text: sarg(at: 0), x: narg(at: 1), y: narg(at: 2), maxWidth: narg(at: 3))
+            delegate.fillText(text: sarg(at: 0), x: narg(at: 1), y: narg(at: 2), maxWidth: narg(at: 3))
             return env.undefined()
         }
-
-        try addFunction("getContextAttributes", shim: shim) { env, this, args in
-            let f = delegate.getContextAttributes
-            return env.undefined()
-        }
-
-        try addFunction("getImageData", shim: shim) { env, this, args in
-            let f = delegate.getImageData
-            return env.undefined()
-        }
-
-        try addFunction("getLineDash", shim: shim) { env, this, args in
-            let f = delegate.getLineDash
-            return env.undefined()
-        }
-
-        try addFunction("getTransform", shim: shim) { env, this, args in
-            let f = delegate.getTransform
-            return env.undefined()
-        }
-
         try addFunction("isPointInPath", shim: shim) { env, this, args in
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            let f = delegate.isPointInPath(x: narg(at: 0), y: narg(at: 1))
-            return env.undefined()
+            return env.boolean(delegate.isPointInPath(x: narg(at: 0), y: narg(at: 1)))
         }
 
         try addFunction("isPointInStroke", shim: shim) { env, this, args in
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            let f = delegate.isPointInStroke(x: narg(at: 0), y: narg(at: 1))
-            return env.undefined()
+            return env.boolean(delegate.isPointInStroke(x: narg(at: 0), y: narg(at: 1)))
         }
 
         try addFunction("lineTo", shim: shim) { env, this, args in
@@ -629,11 +570,6 @@ open class Canvas : JXValue {
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
             delegate.moveTo(x: narg(at: 0), y: narg(at: 1))
-            return env.undefined()
-        }
-
-        try addFunction("putImageData", shim: shim) { env, this, args in
-            let f = delegate.putImageData
             return env.undefined()
         }
 
@@ -659,7 +595,7 @@ open class Canvas : JXValue {
         try addFunction("rotate", shim: shim) { env, this, args in
             func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            let f = delegate.rotate(angle: narg(at: 0))
+            delegate.rotate(angle: narg(at: 0))
             return env.undefined()
         }
 
@@ -673,6 +609,10 @@ open class Canvas : JXValue {
             func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
             delegate.scale(x: narg(at: 0), y: narg(at: 1))
             return env.undefined()
+        }
+
+        try addFunction("getLineDash", shim: shim) { env, this, args in
+            env.array(delegate.getLineDash().map(env.number))
         }
 
         try addFunction("setLineDash", shim: shim) { env, this, args in
@@ -720,6 +660,67 @@ open class Canvas : JXValue {
             delegate.translate(x: narg(at: 0), y: narg(at: 1))
             return env.undefined()
         }
+
+        try addFunction("createConicGradient", shim: shim) { env, this, args in
+            let f = delegate.createConicGradient
+            return env.undefined()
+        }
+
+        try addFunction("createImageData", shim: shim) { env, this, args in
+            let f = delegate.createImageData
+            return env.undefined()
+        }
+
+        try addFunction("createLinearGradient", shim: shim) { env, this, args in
+            let f = delegate.createLinearGradient
+            return env.undefined()
+        }
+
+        try addFunction("createPattern", shim: shim) { env, this, args in
+            let f = delegate.createPattern
+            return env.undefined()
+        }
+
+        try addFunction("createRadialGradient", shim: shim) { env, this, args in
+            let f = delegate.createRadialGradient
+            return env.undefined()
+        }
+
+        try addFunction("drawFocusIfNeeded", shim: shim) { env, this, args in
+            let f = delegate.drawFocusIfNeeded
+            return env.undefined()
+        }
+
+        try addFunction("drawImage", shim: shim) { env, this, args in
+            let f = delegate.drawImage
+            return env.undefined()
+        }
+
+
+        try addFunction("getContextAttributes", shim: shim) { env, this, args in
+            let f = delegate.getContextAttributes
+            return env.undefined()
+        }
+
+        try addFunction("getImageData", shim: shim) { env, this, args in
+            let f = delegate.getImageData
+            return env.undefined()
+        }
+
+        // MARK: To Be Implemented
+
+        try addFunction("getTransform", shim: shim) { env, this, args in
+            let f = delegate.getTransform
+            return env.undefined()
+        }
+
+
+        try addFunction("putImageData", shim: shim) { env, this, args in
+            let f = delegate.putImageData
+            return env.undefined()
+        }
+
+
 
         // experimental and/or deprecated
         //try addFunction("addHitRegion", shim: shim) { env, this, args in
@@ -779,7 +780,7 @@ open class AbstractCanvasAPI : CanvasAPI {
     open var miterLimit: Double = 10.0
 
     open var shadowBlur: Double = 0
-    open var shadowColor: String = "rgba(0, 0, 0, 0)" // Safari's version of: "The default value is fully-transparent black"
+    open var shadowColor: String = "rgba(0, 0, 0, 0)" // WebKit's version of: "The default value is fully-transparent black"
     open var shadowOffsetX: Double = 0
     open var shadowOffsetY: Double = 0
 
@@ -790,166 +791,207 @@ open class AbstractCanvasAPI : CanvasAPI {
     public init() {
     }
 
+    /// Default implementation of `CanvasAPI.measureText` that does nothing and returns `undefined()`
     open func measureText(value: String?) -> TextMetrics {
         missingImplementation(returning: .init(width: 0))
     }
 
+    /// Default implementation of `CanvasAPI.setTransform` that does nothing and returns `undefined()`
     open func setTransform(a: Double, b: Double, c: Double, d: Double, e: Double, f: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.transform` that does nothing and returns `undefined()`
     open func transform(a: Double, b: Double, c: Double, d: Double, e: Double, f: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.save` that does nothing and returns `undefined()`
     open func save() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.restore` that does nothing and returns `undefined()`
     open func restore() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.clearRect` that does nothing and returns `undefined()`
     open func clearRect(x: Double, y: Double, w: Double, h: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.translate` that does nothing and returns `undefined()`
     open func translate(x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.beginPath` that does nothing and returns `undefined()`
     open func beginPath() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.closePath` that does nothing and returns `undefined()`
     open func closePath() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.rect` that does nothing and returns `undefined()`
     open func rect(x: Double, y: Double, w: Double, h: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.fillRect` that does nothing and returns `undefined()`
     open func fillRect(x: Double, y: Double, w: Double, h: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.strokeRect` that does nothing and returns `undefined()`
     open func strokeRect(x: Double, y: Double, width: Double, height: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.fill` that does nothing and returns `undefined()`
     open func fill() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.stroke` that does nothing and returns `undefined()`
     open func stroke() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.clip` that does nothing and returns `undefined()`
     open func clip() {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.moveTo` that does nothing and returns `undefined()`
     open func moveTo(x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.lineTo` that does nothing and returns `undefined()`
     open func lineTo(x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.fillText` that does nothing and returns `undefined()`
     open func fillText(text: String, x: Double, y: Double, maxWidth: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.strokeText` that does nothing and returns `undefined()`
     open func strokeText(text: String, x: Double, y: Double, maxWidth: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.rotate` that does nothing and returns `undefined()`
     open func rotate(angle: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.bezierCurveTo` that does nothing and returns `undefined()`
     open func bezierCurveTo(cp1x: Double, cp1y: Double, cp2x: Double, cp2y: Double, x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.quadraticCurveTo` that does nothing and returns `undefined()`
     open func quadraticCurveTo(cpx: Double, cpy: Double, x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.arc` that does nothing and returns `undefined()`
     open func arc(x: Double, y: Double, radius: Double, startAngle: Double, endAngle: Double, anticlockwise: Bool) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.arcTo` that does nothing and returns `undefined()`
     open func arcTo(x1: Double, y1: Double, x2: Double, y2: Double, radius: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.ellipse` that does nothing and returns `undefined()`
     open func ellipse(x: Double, y: Double, radiusX: Double, radiusY: Double, rotation: Double, startAngle: Double, endAngle: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.createLinearGradient` that does nothing and returns `undefined()`
     open func createLinearGradient(x0: Double, y0: Double, x1: Double, y1: Double) -> CanvasGradientAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.createRadialGradient` that does nothing and returns `undefined()`
     open func createRadialGradient(x0: Double, y0: Double, r0: Double, x1: Double, y1: Double, r1: Double) -> CanvasGradientAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.XXX` that does nothing and returns `undefined()`
     open func drawImage(image: ImageDataAPI, dx: Double, dy: Double, dWidth: Double, dHeight: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.createImageData` that does nothing and returns `undefined()`
     open func createImageData(width: Double, height: Double) -> ImageDataAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.getImageData` that does nothing and returns `undefined()`
     open func getImageData(sx: Double, sy: Double, sw: Double, sh: Double) -> ImageDataAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.putImageData` that does nothing and returns `undefined()`
     open func putImageData(imageData: ImageDataAPI, dx: Double, dy: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.setLineDash` that does nothing and returns `undefined()`
     open func setLineDash(segments: [Double]) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.getLineDash` that does nothing and returns `undefined()`
     open func getLineDash() -> [Double] {
         missingImplementation(returning: [])
     }
 
+    /// Default implementation of `CanvasAPI.isPointInPath` that does nothing and returns `undefined()`
     open func isPointInPath(x: Double, y: Double) -> Bool {
         missingImplementation(returning: false)
     }
 
+    /// Default implementation of `CanvasAPI.isPointInStroke` that does nothing and returns `undefined()`
     open func isPointInStroke(x: Double, y: Double) -> Bool {
         missingImplementation(returning: false)
     }
 
+    /// Default implementation of `CanvasAPI.drawFocusIfNeeded` that does nothing and returns `undefined()`
     open func drawFocusIfNeeded(path: Any, element: Any) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.getTransform` that does nothing and returns `undefined()`
     open func getTransform() -> DOMMatrixAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.scale` that does nothing and returns `undefined()`
     open func scale(x: Double, y: Double) {
         missingImplementation(returning: ())
     }
 
+    /// Default implementation of `CanvasAPI.createConicGradient` that does nothing and returns `undefined()`
     open func createConicGradient(startAngle: Double, x: Double, y: Double) -> CanvasGradientAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.createPattern` that does nothing and returns `undefined()`
     open func createPattern(image: Any, repetition: String) -> CanvasPatternAPI? {
         missingImplementation(returning: nil)
     }
 
+    /// Default implementation of `CanvasAPI.getContextAttributes` that does nothing and returns `undefined()`
     open func getContextAttributes() -> CanvasRenderingContext2DSettingsAPI? {
         missingImplementation(returning: nil)
     }
