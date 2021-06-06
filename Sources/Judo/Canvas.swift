@@ -246,277 +246,383 @@ public protocol ImageDataAPI : AnyObject {
 open class Canvas : JXValue {
     /// The color, gradient, or pattern to use inside shapes.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillStyle
-    open var fillStyle: JXValue
+    open var fillStyle: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The color, gradient, or pattern to use for the strokes (outlines) around shapes.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/strokeStyle
-    open var strokeStyle: JXValue
+    open var strokeStyle: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The color of shadows
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor
-    open var shadowColor: JXValue
+    open var shadowColor: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The amount of blur applied to shadows.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowBlur
-    open var shadowBlur: JXValue
+    open var shadowBlur: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The distance that shadows will be offset horizontally.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowOffsetX
-    open var shadowOffsetX: JXValue
+    open var shadowOffsetX: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The distance that shadows will be offset vertically.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowOffsetY
-    open var shadowOffsetY: JXValue
+    open var shadowOffsetY: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The shape used to draw the end points of lines.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
-    open var lineCap: JXValue
+    open var lineCap: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The shape used to join two line segments where they meet.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
-    open var lineJoin: JXValue
+    open var lineJoin: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The thickness of lines.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineWidth
-    open var lineWidth: JXValue
+    open var lineWidth: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// Sets the line dash offset, or "phase."
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineDashOffset
-    open var lineDashOffset: JXValue
+    open var lineDashOffset: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The miter limit ratio.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/miterLimit
-    open var miterLimit: JXValue
+    open var miterLimit: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The current text style to use when drawing text. This string uses the same syntax as the CSS font specifier.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/font
-    open var font: JXValue
+    open var font: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The current text alignment used when drawing text.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/textAlign
-    open var textAlign: JXValue
+    open var textAlign: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The current text baseline used when drawing text.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/textBaseline
-    open var textBaseline: JXValue
+    open var textBaseline: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The alpha (transparency) value that is applied to shapes and images before they are drawn onto the canvas.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalAlpha
-    open var globalAlpha: JXValue
+    open var globalAlpha: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
     /// The type of compositing operation to apply when drawing new shapes.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
-    open var globalCompositeOperation: JXValue
+    open var globalCompositeOperation: JXValue {
+        didSet {
+            dbg("set")
+        }
+    }
 
 
     /// Returns a TextMetrics object that contains information about the measured text (such as its width, for example).
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/measureText
     open var measureText: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("measureText", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Resets (overrides) the current transformation to the identity matrix, and then invokes a transformation described by the arguments of this method.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform
     open var setTransform: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("setTransform", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Multiplies the current transformation with the matrix described by the arguments of this method.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/transform
     open var transform: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("transform", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Saves the entire state of the canvas by pushing the current state onto a stack.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save
     open var save: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("save", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Restores the most recently saved canvas state by popping the top entry in the drawing state stack. If there is no saved state, this method does nothing.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/restore
     open var restore: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("restore", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Erases the pixels in a rectangular area by setting them to transparent black.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
     open var clearRect: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("clearRect", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a translation transformation to the current matrix.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/translate
     open var translate: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("translate", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Starts a new path by emptying the list of sub-paths. Call this method when you want to create a new path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/beginPath
     open var beginPath: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("beginPath", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Attempts to add a straight line from the current point to the start of the current sub-path. If the shape has already been closed or has only one point, this function does nothing.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/closePath
     open var closePath: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("closePath", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a rectangle to the current path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rect
     open var rect: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("rect", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Draws a rectangle that is filled according to the current fillStyle.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillRect
     open var fillRect: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("fillRect", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Draws a rectangle that is stroked (outlined) according to the current strokeStyle and other context settings.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/strokeRect
     open var strokeRect: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("strokeRect", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Fills the current or given path with the current fillStyle.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fill
     open var fill: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("fill", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Strokes (outlines) the current or given path with the current stroke style.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/stroke
     open var stroke: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("stroke", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Turns the current or given path into the current clipping region. It replaces any previous clipping region.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clip
     open var clip: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("clip", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Begins a new sub-path at the point specified by the given (x, y) coordinates.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/moveTo
     open var moveTo: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("moveTo", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a straight line to the current sub-path by connecting the sub-path's last point to the specified (x, y) coordinates.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
     open var lineTo: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("lineTo", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Draws a text string at the specified coordinates, filling the string's characters with the current fillStyle.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillText
     open var fillText: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("fillText", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Strokes — that is, draws the outlines of — the characters of a text string at the specified coordinates.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/strokeText
     open var strokeText: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("strokeText", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a rotation to the transformation matrix.
-    /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+    /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/scale
     open var rotate: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("rotate", args.compactMap(\.stringValue))
+        return ctx.undefined()
+    }
+
+    /// Adds a scaling transformation to the canvas units by x horizontally and by y vertically.
+    /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+    open var scale: JXFunction = { ctx, this, args in
+        dbg("scale", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a cubic Bézier curve to the current sub-path. It requires three points: the first two are control points and the third one is the end point. The starting point is the latest point in the current path, which can be changed using moveTo() before creating the Bézier curve.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/bezierCurveTo
     open var bezierCurveTo: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("bezierCurveTo", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// adds a quadratic Bézier curve to the current sub-path. It requires two points: the first one is a control point and the second one is the end point. The starting point is the latest point in the current path, which can be changed using moveTo() before creating the quadratic Bézier curve.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/quadraticCurveTo
     open var quadraticCurveTo: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("quadraticCurveTo", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a circular arc to the current sub-path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arc
     open var arc: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("arc", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds a circular arc to the current sub-path, using the given control points and radius.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arcTo
     open var arcTo: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("arcTo", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Adds an elliptical arc to the current sub-path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/ellipse
     open var ellipse: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("ellipse", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Creates a gradient along the line connecting two given coordinates.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createLinearGradient
     open var createLinearGradient: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("createLinearGradient", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Creates a radial gradient using the size and coordinates of two circles.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createRadialGradient
     open var createRadialGradient: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("createRadialGradient", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Provides different ways to draw an image onto the canvas.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
     open var drawImage: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("drawImage", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Creates a new, blank ImageData object with the specified dimensions.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createImageData
     open var createImageData: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("createImageData", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Returns an ImageData object representing the underlying pixel data for a specified portion of the canvas.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData
     open var getImageData: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("getImageData", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Paints data from the given ImageData object onto the canvas.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/putImageData
     open var putImageData: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("putImageData", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Sets the line dash pattern used when stroking lines.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setLineDash
     open var setLineDash: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("setLineDash", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Gets the current line dash pattern.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getLineDash
     open var getLineDash: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("getLineDash", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Reports whether or not the specified point is contained in the current path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/isPointInPath
     open var isPointInPath: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("isPointInPath", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     /// Reports whether or not the specified point is inside the area contained by the stroking of a path.
     /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/isPointInStroke
     open var isPointInStroke: JXFunction = { ctx, this, args in
-        ctx.undefined()
+        dbg("isPointInStroke", args.compactMap(\.stringValue))
+        return ctx.undefined()
     }
 
     let delegate: CanvasAPI
@@ -564,8 +670,6 @@ open class Canvas : JXValue {
 
         let shim = false
 
-        /// Returns a TextMetrics object that contains information about the measured text (such as its width, for example).
-        /// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/measureText
         let _ = try? addFunction("measureText", shim: shim, callback: measureText)
         let _ = try? addFunction("setTransform", shim: shim, callback: setTransform)
         let _ = try? addFunction("transform", shim: shim, callback: transform)
@@ -585,6 +689,7 @@ open class Canvas : JXValue {
         let _ = try? addFunction("lineTo", shim: shim, callback: lineTo)
         let _ = try? addFunction("fillText", shim: shim, callback: fillText)
         let _ = try? addFunction("strokeText", shim: shim, callback: strokeText)
+        let _ = try? addFunction("scale", shim: shim, callback: clip)
         let _ = try? addFunction("rotate", shim: shim, callback: rotate)
         let _ = try? addFunction("bezierCurveTo", shim: shim, callback: bezierCurveTo)
         let _ = try? addFunction("quadraticCurveTo", shim: shim, callback: quadraticCurveTo)
