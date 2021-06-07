@@ -796,7 +796,7 @@ open class AbstractCanvasAPI : CanvasAPI {
         /// Text measurement merely returns the number of characters in the text multiplied by the font size
         // naïve font size parsing: just grab the first numbers in the font string
         let fontSize = font
-            .components(separatedBy: .decimalDigits.inverted)
+            .components(separatedBy: CharacterSet.decimalDigits.inverted)
             .first.flatMap(Double.init)
         let factor = 0.8
         return TextMetrics(width: (fontSize ?? 0) * Double(value.count) * factor)
