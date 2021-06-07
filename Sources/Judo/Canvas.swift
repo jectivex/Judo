@@ -99,7 +99,7 @@ public protocol CanvasAPI : AnyObject {
     /// Returns a TextMetrics object that contains information about the measured text (such as its width, for example).
     ///
     /// See: [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/measureText)
-    func measureText(value: String?) -> TextMetrics
+    func measureText(value: String) -> TextMetrics?
 
     /// Resets (overrides) the current transformation to the identity matrix, and then invokes a transformation described by the arguments of this method.
     ///
@@ -792,8 +792,14 @@ open class AbstractCanvasAPI : CanvasAPI {
     }
 
     /// Default implementation of `CanvasAPI.measureText` that does nothing and returns `undefined()`
-    open func measureText(value: String?) -> TextMetrics {
-        missingImplementation(returning: .init(width: 0))
+    open func measureText(value: String) -> TextMetrics? {
+        /// Text measurement merely returns the number of characters in the text multiplied by the font size
+        // naïve font size parsing: just grab the first numbers in the font string
+        let fontSize = font
+            .components(separatedBy: .decimalDigits.inverted)
+            .first.flatMap(Double.init)
+        let factor = 0.8
+        return TextMetrics(width: (fontSize ?? 0) * Double(value.count) * factor)
     }
 
     /// Default implementation of `CanvasAPI.setTransform` that does nothing and returns `undefined()`

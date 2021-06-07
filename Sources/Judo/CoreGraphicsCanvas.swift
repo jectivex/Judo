@@ -195,7 +195,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         ctx.pathContains(CGPoint(x: x, y: y), mode: .stroke)
     }
 
-    public override func measureText(value: String?) -> TextMetrics {
+    public override func measureText(value: String) -> TextMetrics? {
         wip(super.measureText(value: value))
     }
 
@@ -276,6 +276,71 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
 
 }
+
+
+#if canImport(CoreGraphics)
+import CoreGraphics
+
+public class PDFCanvas : CoreGraphicsCanvas {
+    private var outputData: NSMutableData
+    private let graphicsContext: CGContext
+
+    enum Errors : Error {
+        case unableToCreateDataConsumer
+        case unableToCreatePDFContext
+    }
+
+
+    /// Creates a new `CoreGraphicsCanvas` that uses an underlying PDF context for drawing.
+    ///
+    /// - Parameters:
+    ///   - properties: and properties to use to create the canvas
+    ///   - size: the size of the canvas
+    public required init(size: CGSize, properties: [String: Any] = [:]) throws {
+        self.outputData = NSMutableData()
+        var imageRect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
+
+        guard let dataConsumer = CGDataConsumer(data: outputData as CFMutableData) else {
+            throw Errors.unableToCreateDataConsumer
+        }
+
+        let attrDictionary = NSMutableDictionary()
+        for (key, value) in properties {
+            attrDictionary[key] = value
+        }
+
+        guard let ctx = CGContext(consumer: dataConsumer, mediaBox: &imageRect, attrDictionary) else {
+            throw Errors.unableToCreatePDFContext
+        }
+
+        self.graphicsContext = ctx
+        graphicsContext.beginPDFPage(nil)
+
+//        NSGraphicsContext.saveGraphicsState()
+//        defer { NSGraphicsContext.restoreGraphicsState() }
+//        NSGraphicsContext.current = NSGraphicsContext(cgContext: cgctx, flipped: false) // use the PDF context for drawing
+
+//        cgctx.beginPDFPage(nil)
+//        self.draw(in: imageRect)
+//        cgctx.endPage()
+//        cgctx.closePDF()
+//
+//        return outputData
+
+
+        super.init(context: ctx)
+    }
+
+    /// Ends the current PDF context and returns the data. The context should not be used after calling this.
+    public func createPDF() -> Data {
+        graphicsContext.endPage()
+        graphicsContext.closePDF()
+        // return PDFDocument(data: outputData as Data)
+        return outputData as Data
+    }
+}
+
+#endif
 
 /// Work-in-progress, simply to highlight a line with a deprecation warning
 @available(*, deprecated, message: "work-in-progress")
