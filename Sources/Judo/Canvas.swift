@@ -1003,12 +1003,3 @@ open class AbstractCanvasAPI : CanvasAPI {
     }
 }
 
-
-#if canImport(CoreGraphics)
-import CoreGraphics
-
-/// A `Canvas` implementation that uses Apple's CoreGraphics framework to draw into a `CGLayer`.
-public class CoreGraphicsCanvas : AbstractCanvasAPI {
-}
-
-#endif
