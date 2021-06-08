@@ -1,9 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Marc Prud'hommeaux on 5/20/21.
-//
 
 import JXKit
 import MiscKit
