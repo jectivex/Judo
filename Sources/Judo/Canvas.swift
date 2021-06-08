@@ -8,9 +8,8 @@ import JXKit
 import MiscKit
 
 public protocol CanvasAPI : AnyObject {
-//    var width: Double { get set }
-//
-//    var height: Double { get set }
+    // var width: Double { get set }
+    // var height: Double { get set }
 
     /// The color, gradient, or pattern to use inside shapes.
     ///
@@ -1003,8 +1002,10 @@ open class AbstractCanvasAPI : CanvasAPI {
     }
 
     /// The callback for a missing implementation; merely logs the occurance
-    open func missingImplementation<T>(for function: StaticString = #function, returning returnValue: T) -> T {
-        dbg(function)
+    open func missingImplementation<T>(for function: StaticString = #function, log: Bool = false, returning returnValue: T) -> T {
+        if log {
+            dbg(function)
+        }
         return returnValue
     }
 }
