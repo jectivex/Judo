@@ -2,7 +2,7 @@
 #if canImport(CoreGraphics)
 import CoreGraphics
 
-/// A `Canvas` implementation that uses Apple's CoreGraphics framework to draw into a `CGLayer`.
+/// A `Canvas` implementation that uses the CoreGraphics framework to draw into a `CGLayer`.
 ///
 /// Most methods are a 1-to-1 mapping to the equivalent `CoreGraphics` APIs.
 open class CoreGraphicsCanvas : AbstractCanvasAPI {
