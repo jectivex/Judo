@@ -1,3 +1,4 @@
+import MiscKit
 
 #if canImport(CoreGraphics)
 import CoreGraphics
@@ -278,8 +279,56 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 }
 
 
-#if canImport(CoreGraphics)
-import CoreGraphics
+extension CoreGraphicsCanvas {
+    fileprivate static func createBitmapContext(width: CGFloat, height: CGFloat, scaleFactor: CGFloat = 12.0) throws -> CGContext {
+        if width <= 0 || !width.isFinite  { throw err("illegal width \(width)") }
+        if height <= 0 || !height.isFinite { throw err("illegal height \(height)") }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitsPerComponent = 8
+
+        guard let bitmapContext = CGContext(
+            data: nil,
+            width: Int(width * scaleFactor),
+            height: Int(height * scaleFactor),
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            throw err("unable to create bitmapContext")
+        }
+
+        bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
+
+        return bitmapContext
+    }
+
+    #warning("re-implement bitmap rendering")
+    /// Renders the current canvas layer into a bitmap image and returns the resulting `CGImage`
+    fileprivate func createBitmapImage(size: CGSize, scaleFactor: CGFloat, backgroundColor: CGColor?) throws -> CGImage {
+        let bitmapContext = try Self.createBitmapContext(width: size.width, height: size.height, scaleFactor: 1.0)
+
+        // place a white background underneath
+        if let backgroundColor = backgroundColor {
+            bitmapContext.setFillColor(backgroundColor)
+            bitmapContext.fill(CGRect(origin: .zero, size: size))
+        }
+
+        bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
+
+
+        // draw our layer into the context
+        //bitmapContext.draw(layer, at: .zero)
+        throw err("TODO: restore thumbnail")
+
+        guard let bitmapImage = bitmapContext.makeImage() else {
+            throw err("unable to create bitmapImage from bitmapContext")
+        }
+
+        return bitmapImage
+    }
+}
+
 
 public class PDFCanvas : CoreGraphicsCanvas {
     private var outputData: NSMutableData
@@ -339,8 +388,6 @@ public class PDFCanvas : CoreGraphicsCanvas {
         return outputData as Data
     }
 }
-
-#endif
 
 /// Work-in-progress, simply to highlight a line with a deprecation warning
 @available(*, deprecated, message: "work-in-progress")
