@@ -169,7 +169,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
     
     public override func arc(x: Double, y: Double, radius: Double, startAngle: Double, endAngle: Double, anticlockwise: Bool) {
-        ctx.addArc(center: CGPoint(x: x, y: y), radius: CGFloat(radius), startAngle: CGFloat(startAngle), endAngle: CGFloat(endAngle), clockwise: !anticlockwise)
+        ctx.addArc(center: CGPoint(x: x, y: y), radius: CGFloat(radius), startAngle: CGFloat(startAngle), endAngle: CGFloat(endAngle), clockwise: !anticlockwise) // anti-anticlockwise
     }
 
     public override func arcTo(x1: Double, y1: Double, x2: Double, y2: Double, radius: Double) {

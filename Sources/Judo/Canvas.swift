@@ -615,7 +615,8 @@ open class Canvas : JXValue {
         }
 
         try addFunction("setLineDash", shim: shim) { env, this, args in
-            let f = delegate.setLineDash
+            let nums = args.first?.array?.compactMap(\.numberValue)
+            delegate.setLineDash(segments: nums ?? [])
             return env.undefined()
         }
 
@@ -720,8 +721,8 @@ open class Canvas : JXValue {
         }
 
 
+        // Mark: Experimental and/or Deprecated
 
-        // experimental and/or deprecated
         //try addFunction("addHitRegion", shim: shim) { env, this, args in
         //    return env.undefined()
         //}
