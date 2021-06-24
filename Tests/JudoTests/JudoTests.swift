@@ -1,5 +1,5 @@
 import XCTest
-@testable import Judo
+import Judo
 import MiscKit
 
 /// A running count of all the contexts that have been created and not destroyed
