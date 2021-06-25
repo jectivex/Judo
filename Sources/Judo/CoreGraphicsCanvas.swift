@@ -3,7 +3,7 @@ import MiscKit
 #if canImport(CoreGraphics)
 import CoreGraphics
 
-/// A `Canvas` implementation that uses the CoreGraphics framework to draw into a `CGLayer`.
+/// A `Canvas` implementation that uses the CoreGraphics framework to draw into a destination such as a `CGLayer` or `CGPDFDocument`.
 ///
 /// Most methods are a 1-to-1 mapping to the equivalent `CoreGraphics` APIs.
 open class CoreGraphicsCanvas : AbstractCanvasAPI {
@@ -11,34 +11,39 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     /// The underlying `CGContext` for drawing
     open var ctx: CGContext
 
+    /// The background color to draw for `clearRect`
+    open var backgroundColor: CGColor?
+
     /// The size of the canvas
     open var size: CGSize {
         didSet {
-            wip("IMPLEMENT")
+            // every time we change the size, re-apply the transform to fix Quartz's flipped coordinate system
+            resetTransform()
         }
     }
 
-    public init(context: CGContext, size: CGSize) {
+    /// Creates this canvas with the given underlying context and size
+    public init(context: CGContext, size: CGSize, backgroundColor: CGColor? = nil) {
         self.ctx = context
         self.size = size
+        self.backgroundColor = backgroundColor
     }
 
     /// The transform for flipping along the Y axis
-    var flipYAxis: CGAffineTransform {
-        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+    func flippedYTransform() -> CGAffineTransform {
+        #if os(macOS)
+        CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+        #else
+        CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+        #endif
     }
 
 
     /// Flip vertical since Quartz coordinates have origin at lower-left
     func resetTransform() {
         ctx.concatenate(ctx.ctm.inverted()) // revert to the identity so we can apply the transform…
-        ctx.concatenate(flipYAxis) // …then flip the image so the origin is what Canvas2D expects
+        ctx.concatenate(flippedYTransform()) // …then flip the image so the origin is what Canvas2D expects
     }
-    
-    //open override var font: String {
-    //    didSet {
-    //    }
-    //}
 
     open override var lineCap: String {
         didSet {
@@ -135,7 +140,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     open override var fillStyle: String {
         didSet {
-            if let color = parseColorStyle(css: fillStyle) {
+            if let color = CSS.parseColorStyle(css: fillStyle) {
                 ctx.setFillColor(color)
             } else {
                 ctx.setFillColor(red: 0, green: 0, blue: 0, alpha: 1)
@@ -145,7 +150,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     open override var strokeStyle: String {
         didSet {
-            if let color = parseColorStyle(css: strokeStyle) {
+            if let color = CSS.parseColorStyle(css: strokeStyle) {
                 ctx.setStrokeColor(color)
             } else {
                 ctx.setStrokeColor(red: 0, green: 0, blue: 0, alpha: 1)
@@ -203,7 +208,16 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
 
     public override func clearRect(x: Double, y: Double, w: Double, h: Double) {
-        ctx.clear(CGRect(x: x, y: y, width: w, height: h))
+        // When this is a PDF context it draws a black background because: “If the provided context is a window or bitmap context, Core Graphics clears the rectangle. For other context types, Core Graphics fills the rectangle in a device-dependent manner. However, you should not use this function in contexts other than window or bitmap contexts.”
+        // ctx.clear(.init(x: x, y: y, width: w, height: h))
+        if let backgroundColor = self.backgroundColor {
+            self.restoringContext {
+                ctx.setFillColor(backgroundColor)
+                ctx.fill(.init(x: x, y: y, width: w, height: h))
+            }
+        } else {
+            ctx.clear(CGRect(x: x, y: y, width: w, height: h))
+        }
     }
 
     public override func moveTo(x: Double, y: Double) {
@@ -293,8 +307,8 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     private func renderText(mode: CGTextDrawingMode, _ text: String, _ x: Double, _ y: Double, _ maxWidth: Double) {
         restoringContext {
-            self.ctx.concatenate(flipYAxis.inverted()) // flip back…
-            var position = CGPoint(x: x, y: y).applying(flipYAxis) // …and re-apply transform to origin
+            self.ctx.concatenate(flippedYTransform().inverted()) // flip back…
+            var position = CGPoint(x: x, y: y).applying(flippedYTransform()) // …and re-apply transform to origin
             let astr = NSAttributedString(string: text, attributes: self.textAttributes(stroke: mode == .stroke))
             let width = astr.size().width
 
@@ -316,7 +330,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     func textAttributes(stroke: Bool? = nil) -> [NSAttributedString.Key: NSObject] {
         var attrs: [NSAttributedString.Key: NSObject] = [:]
 
-        if let font = parseFontStyle(css: self.font) {
+        if let font = CSS.parseFontStyle(css: self.font) {
             attrs[.font] = font
         }
 
@@ -379,65 +393,39 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         try f()
         if let path = path { ctx.addPath(path) } // continue the current path
     }
-
-
 }
 
-
 extension CoreGraphicsCanvas {
-    fileprivate static func createBitmapContext(width: CGFloat, height: CGFloat, scaleFactor: CGFloat = 12.0) throws -> CGContext {
-        if width <= 0 || !width.isFinite  { throw err("illegal width \(width)") }
-        if height <= 0 || !height.isFinite { throw err("illegal height \(height)") }
+    fileprivate static func createBitmapContext(width: CGFloat, height: CGFloat, scaleFactor: CGFloat? = nil) -> CGContext? {
+        if width <= 0 || !width.isFinite  { return nil }
+        if height <= 0 || !height.isFinite { return nil }
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitsPerComponent = 8
 
         guard let bitmapContext = CGContext(
             data: nil,
-            width: Int(width * scaleFactor),
-            height: Int(height * scaleFactor),
+            width: Int(width * (scaleFactor ?? 1)),
+            height: Int(height * (scaleFactor ?? 1)),
             bitsPerComponent: bitsPerComponent,
             bytesPerRow: 0,
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            throw err("unable to create bitmapContext")
+            return nil
         }
 
-        bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
+        if let scaleFactor = scaleFactor {
+            bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
+        }
 
         return bitmapContext
     }
-
-    #warning("re-implement bitmap rendering")
-    /// Renders the current canvas layer into a bitmap image and returns the resulting `CGImage`
-    fileprivate func createBitmapImage(size: CGSize, scaleFactor: CGFloat, backgroundColor: CGColor?) throws -> CGImage {
-        let bitmapContext = try Self.createBitmapContext(width: size.width, height: size.height, scaleFactor: 1.0)
-
-        // place a white background underneath
-        if let backgroundColor = backgroundColor {
-            bitmapContext.setFillColor(backgroundColor)
-            bitmapContext.fill(CGRect(origin: .zero, size: size))
-        }
-
-        bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
-
-
-        // draw our layer into the context
-        //bitmapContext.draw(layer, at: .zero)
-        throw err("TODO: restore thumbnail")
-
-        guard let bitmapImage = bitmapContext.makeImage() else {
-            throw err("unable to create bitmapImage from bitmapContext")
-        }
-
-        return bitmapImage
-    }
 }
-
 
 /// A `CoreGraphicsCanvas` subclass that maintains a PDF buffer into which the commands are drawn.
 open class PDFCanvas : CoreGraphicsCanvas {
-    open var outputData: NSMutableData
+    /// The data buffer the PDF is being written to
+    open var outputData: CFMutableData
 
     public enum Errors : Error {
         case unableToCreateDataConsumer
@@ -451,10 +439,10 @@ open class PDFCanvas : CoreGraphicsCanvas {
     ///   - properties: and properties to use to create the canvas
     ///   - size: the size of the canvas
     public required init(size: CGSize, properties: [String: Any] = [:]) throws {
-        self.outputData = NSMutableData()
+        self.outputData = NSMutableData() as CFMutableData
         var imageRect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
 
-        guard let dataConsumer = CGDataConsumer(data: outputData as CFMutableData) else {
+        guard let dataConsumer = CGDataConsumer(data: outputData) else {
             throw Errors.unableToCreateDataConsumer
         }
 
@@ -473,16 +461,30 @@ open class PDFCanvas : CoreGraphicsCanvas {
         resetTransform()
     }
 
-    /// Ends the current PDF context and returns the data. The context should not be used after calling this.
-    public func createPDF() -> Data {
+    /// Ends the current PDF context and returns the data. The context must not be used after calling this.
+    public func finishPDF() -> Data {
         ctx.endPage()
         ctx.closePDF()
-
-        // return PDFDocument(data: outputData as Data)
         return outputData as Data
     }
+
+    /// Creates a CGPDFDocument document from the given data. The context must not be used after calling this.
+    public func createCGPDFDocument() -> CGPDFDocument? {
+        CGDataProvider(data: finishPDF() as CFData).flatMap(CGPDFDocument.init)
+    }
+
 }
 
+#if canImport(PDFKit)
+import PDFKit
+extension PDFCanvas {
+    /// Creates a PDF document from the given data. The context must not be used after calling this.
+    @available(macOS 10.13, iOS 11.0, watchOS 4.0, tvOS 11.0, *)
+    public func createPDFDocument() -> PDFDocument? {
+        PDFDocument(data: finishPDF() as Data)
+    }
+}
+#endif
 
 /// A `CoreGraphicsCanvas` subclass that draws into a CGLayer
 open class LayerCanvas : CoreGraphicsCanvas {
@@ -493,17 +495,81 @@ open class LayerCanvas : CoreGraphicsCanvas {
         case unableToCreateLayer
     }
 
-    public required init(size: CGSize) throws {
-        guard let ctx = CGContext(consumer: CGDataConsumer(data: NSMutableData())!, mediaBox: nil, nil) else {
-            throw Errors.unableToCreateDataConsumer
+    public required init(size: CGSize, content parentContext: CGContext? = nil) throws {
+        let outputData = NSMutableData()
 
-        }
-        guard let layer = CGLayer(ctx, size: size, auxiliaryInfo: nil) else {
+        let rootContext = try parentContext ?? {
+            guard let dataConsumer = CGDataConsumer(data: outputData as CFMutableData) else {
+                throw Errors.unableToCreateDataConsumer
+            }
+
+            var mediaBox: CGRect = .zero
+            guard let ctx = CGContext(consumer: dataConsumer, mediaBox: &mediaBox, nil) else {
+                throw Errors.unableToCreateDataConsumer
+            }
+            return ctx
+        }()
+
+        guard let layer = CGLayer(rootContext, size: size, auxiliaryInfo: nil) else {
             throw Errors.unableToCreateLayer
         }
+
+        guard let ctx = layer.context else {
+            throw Errors.unableToCreateLayer
+        }
+
         self.layer = layer
 
+        // note that we use the layer's context for drawing, not the parent context
         super.init(context: ctx, size: size)
+    }
+
+    /// Renders the current canvas layer into a bitmap image and returns the resulting `CGImage`
+    func createBitmapImage(size: CGSize, scaleFactor: CGFloat?) -> CGImage? {
+        guard let bitmapContext = CoreGraphicsCanvas.createBitmapContext(width: .init(self.size.width) * (scaleFactor ?? 1), height: .init(self.size.height) * (scaleFactor ?? 1), scaleFactor: scaleFactor) else {
+            return nil
+        }
+
+        // place a white background underneath
+        if let backgroundColor = self.backgroundColor {
+            bitmapContext.setFillColor(backgroundColor)
+            bitmapContext.fill(CGRect(origin: .zero, size: layer.size))
+        }
+
+        if let scaleFactor = scaleFactor {
+            bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
+        }
+
+        // draw our layer into the context
+        bitmapContext.draw(self.layer, at: .zero)
+
+        return bitmapContext.makeImage()
+    }
+
+    /// Creates image data for the canvas in the given format
+    func createImageData(type: CFString, size: CGSize, scaleFactor: CGFloat?) -> Data? {
+        guard let img = createBitmapImage(size: size, scaleFactor: scaleFactor) else { return nil }
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(data as CFMutableData, type, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, img, nil)
+        if !CGImageDestinationFinalize(dest) { return nil }
+        return data as Data
+    }
+}
+
+#if os(iOS) || os(tvOS) || os(watchOS)
+import MobileCoreServices // needed for kUTTypePNG on iOS
+#endif
+
+extension LayerCanvas {
+    /// Creates image data for the canvas in PNG format
+    public func createPNGData(scaleFactor: CGFloat? = nil) -> Data? {
+        createImageData(type: kUTTypePNG, size: size, scaleFactor: scaleFactor)
+    }
+
+    /// Creates image data for the canvas in JPEG format
+    public func createJPEGData(scaleFactor: CGFloat? = nil) -> Data? {
+        createImageData(type: kUTTypeJPEG, size: size, scaleFactor: scaleFactor)
     }
 }
 
@@ -520,36 +586,4 @@ fileprivate func wipgrad<T>(_ value: T) -> T { value }
 
 #endif
 
-
-#if canImport(AppKit)
-import AppKit
-
-/// Use WebKit to parse the given attributes; this works well, but is very slow and requires that it be done on the main thread (plus it isn't available on iOS).
-private func parseStyle(key: NSAttributedString.Key, value: String) -> Any? {
-    let cssKey: String
-    switch key {
-    case .font: cssKey = "font"
-    case .foregroundColor: cssKey = "color"
-    case .backgroundColor: cssKey = "background-color"
-    default: cssKey = key.rawValue
-    }
-
-    let html = "<span style='\(cssKey): \(value)'>X</span>"
-    let str = NSAttributedString(html: html.data(using: .utf8) ?? .init(), options: [:], documentAttributes: nil)
-    let attr = str?.attribute(key, at: 0, effectiveRange: nil)
-    print(cssKey, value, "parsed as:", attr)
-    return attr
-}
-
-
-private func parseColorStyle(css string: String) -> CGColor? {
-    (parseStyle(key: .foregroundColor, value: string) as? NSColor)?.cgColor
-}
-
-/// Parse the given font CSS string, caching the results
-private func parseFontStyle(css string: String) -> CTFont? {
-    (parseStyle(key: .font, value: string) as? NSFont)
-}
-
-#endif
 
