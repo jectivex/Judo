@@ -27,6 +27,7 @@ final class CanvasTests: XCTestCase {
 
 
 final class CSSTests : XCTestCase {
+    #if canImport(CoreGraphics)
     /// Compare our CSS font parsing output with WebKit's (via NSAttributedString(html:), which is only available on macOS).
     /// This will validate our own cross-platform font parsing using WebKit's behavior as a reference.
     func testColorParsing() throws {
@@ -78,7 +79,9 @@ final class CSSTests : XCTestCase {
 //        XCTAssertEqual([1.0, 1.0, 1.0, 0.5], comps("hsla(0,0%,100%,   0.5)"))
 //        XCTAssertEqual([0.5, 0.7, 0.4, 0.8], comps("hsla(100, 33%, 55%, 0.8)"))
     }
+    #endif // canImport(CoreGraphics)
 
+    #if canImport(CoreGraphics)
     /// Compare our CSS font parsing output with WebKit's (via an HTML NSAttributedString, which is only available on macOS)
     func testFontParsing() throws {
         let font = CSS.parseFontStyle
@@ -130,6 +133,7 @@ final class CSSTests : XCTestCase {
         check(font: "small-caption", parses: "System Font Regular", size: 11.0)
         check(font: "status-bar", parses: "System Font Regular", size: 10.0)
     }
+    #endif // canImport(CoreGraphics)
 }
 
 #if canImport(PDFKit)
