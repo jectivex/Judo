@@ -47,37 +47,82 @@ final class CoreGraphicsCanvasTests: XCTestCase {
             XCTAssertEqual("18px serif", api.font)
         }
 
-        XCTAssertEqual("function", try ctx.eval(this: canvas, script: "typeof this.measureText").stringValue)
+        let measureText = { canvas["measureText"].call(withArguments: [JXValue(string: $0, in: ctx)])["width"].numberValue }
+
+        func invoke(emptyArgs function: String) -> () -> () {
+            let f = canvas[function]
+            XCTAssertTrue(f.isFunction, "not a function: \(function)")
+            return { f.call(withArguments: []) }
+        }
+
+        func invoke(numericArgs function: String) -> (Double...) -> () {
+            let f = canvas[function]
+            XCTAssertTrue(f.isFunction, "not a function: \(function)")
+            return { f.call(withArguments: $0.map({ JXValue(double: $0, in: ctx) })) }
+        }
+
+        let str = { JXValue(string: $0, in: ctx) }
+        let num = { JXValue(double: $0, in: ctx) }
+
+        let stroke = invoke(emptyArgs: "stroke")
+        let save = invoke(emptyArgs: "save")
+        let restore = invoke(emptyArgs: "restore")
+        let clip = invoke(emptyArgs: "clip")
+
+        let moveTo = invoke(numericArgs: "moveTo")
+        let lineTo = invoke(numericArgs: "lineTo")
+        let fillRect = invoke(numericArgs: "fillRect")
+        let clearRect = invoke(numericArgs: "clearRect")
+        let strokeRect = invoke(numericArgs: "strokeRect")
+        let quadraticCurveTo = invoke(numericArgs: "quadraticCurveTo")
+        let bezierCurveTo = invoke(numericArgs: "bezierCurveTo")
+        let arcTo = invoke(numericArgs: "arcTo")
+        let rotate = invoke(numericArgs: "rotate")
+
+        let fillText = { canvas["fillText"].call(withArguments: [str($0), num($1), num($2), num($3)]) }
+
+        let rnd = { Double.random(in: $0 as ClosedRange<Double>) }
+
+        moveTo(0, 0)
+        lineTo(10, 10)
+
+        canvas["fillStyle"] = str("blue")
+        fillRect(rnd(10...200), rnd(10...200), rnd(100...400), rnd(100...400))
+
+        canvas["lineWidth"] = num(10)
+        canvas["setLineDash"].call(withArguments: [JXValue(newArrayIn: ctx, values: [num(5), num(3)])])
+        canvas["strokeStyle"] = str("rebeccapurple")
+
+        strokeRect(rnd(10...200), rnd(10...200), rnd(100...400), rnd(100...400))
+
+        canvas["fillStyle"] = str("red")
+        canvas["font"] = str("33px Zapfino")
+        _ = fillText("Hello Sailor", 100, 100, 300)
 
 
-        try ctx.eval(this: canvas, script: "this.moveTo(1, 2);")
-        try ctx.eval(this: canvas, script: "this.lineTo(99, 2);")
-        try ctx.eval(this: canvas, script: "this.fillRect();")
+        do {
+            XCTAssertEqual("function", try ctx.eval(this: canvas, script: "typeof this.measureText").stringValue)
+            try ctx.eval(this: canvas, script: "this.font = '13px serif';")
 
-        try ctx.eval(this: canvas, script: "this.font = '13px serif';")
+            // TODO: implement measureText() (and CSS font parsing) to test text measurement
+            // for now, just use `AbstractCanvasAPI`'s simplistic calculation; once we have native font support, we can check the widths of Zapfino and other funky fonts
+            //XCTAssertEqual(3 * 13 * 0.8, try ctx.eval(this: canvas, script: "this.measureText('abc').width").numberValue)
+            //
+            //XCTAssertEqual(3 * 13 * 0.8, measureText("abc"))
+            //XCTAssertEqual(4 * 13 * 0.8, measureText("abcd"))
+            //XCTAssertEqual(5 * 13 * 0.8, measureText("ab DE"))
 
-        // TODO: implement measureText() (and CSS font parsing) to test text measurement
-        // for now, just use `AbstractCanvasAPI`'s naieve calculation; once we have native font support, we can check the widths of Zapfino and other funky fonts
-        XCTAssertEqual(3 * 13 * 0.8, try ctx.eval(this: canvas, script: "this.measureText('abc').width").numberValue)
-
-        // XCTAssertEqual(3 * 18, try ctx.eval(this: canvas, script: "this.measureText('abc').width").numberValue)
-        // XCTAssertEqual(5 * 13, try ctx.eval(this: canvas, script: "this.measureText('12345').width").numberValue)
+            canvas["font"] = str("18px serif")
+            XCTAssertEqual(37, measureText("ABC") ?? 0, accuracy: 1)
+            canvas["font"] = str("99px monospace")
+            XCTAssertEqual(178, measureText("ABC") ?? 0, accuracy: 1)
+            canvas["font"] = str("33px Zapfino")
+            XCTAssertEqual(126, measureText("ABC") ?? 0, accuracy: 1)
+        }
 
         let doc = api.createPDF()
-//        else {
-//            return XCTFail("unable to create PDF document from data")
-//        }
-//
-//        guard let attrs = doc.documentAttributes else {
-//            return XCTFail("unable to create PDF document attributes from data")
-//        }
-//
-//        // standard attributes for PDF documents
-//        XCTAssertNotNil(attrs["ModDate"])
-//        XCTAssertNotNil(attrs["CreationDate"])
-//        XCTAssertNotNil(attrs["CreationDate"])
     }
 }
 
-#endif
 
+#endif

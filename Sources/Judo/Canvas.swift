@@ -767,10 +767,11 @@ open class Canvas : JXValue {
 /// Partial implementations can subclass this class and implement only the parts they need.
 open class AbstractCanvasAPI : CanvasAPI {
     open var fillStyle: String = "#000"
+    open var strokeStyle: String = "#000"
+
     open var font: String = "10px sans-serif"
-    open var globalAlpha: Double = 1.0
-    open var globalCompositeOperation: String = "source-over"
-    open var imageSmoothingEnabled: Bool = true
+    open var textAlign: String = "start"
+    open var textBaseline: String = "alphabetic"
 
     open var lineCap: String = "butt"
     open var lineDashOffset: Double = 0.0
@@ -783,9 +784,10 @@ open class AbstractCanvasAPI : CanvasAPI {
     open var shadowOffsetX: Double = 0
     open var shadowOffsetY: Double = 0
 
-    open var strokeStyle: String = "#000"
-    open var textAlign: String = "start"
-    open var textBaseline: String = "alphabetic"
+    open var globalAlpha: Double = 1.0
+    open var globalCompositeOperation: String = "source-over"
+    open var imageSmoothingEnabled: Bool = true
+
 
     public init() {
     }

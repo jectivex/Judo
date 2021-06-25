@@ -11,52 +11,34 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     /// The underlying `CGContext` for drawing
     open var ctx: CGContext
 
-    public init(context: CGContext) {
+    /// The size of the canvas
+    open var size: CGSize {
+        didSet {
+            wip("IMPLEMENT")
+        }
+    }
+
+    public init(context: CGContext, size: CGSize) {
         self.ctx = context
+        self.size = size
     }
 
-//    /// The transform for flipping along the Y axis
-//    var flipYAxis: CGAffineTransform {
-//        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(height)).scaledBy(x: 1, y: -1)
-//    }
-//
-//
-//    /// Flip vertical since Quartz coordinates have origin at lower-left
-//    private func resetTransform() {
-//        ctx.concatenate(ctx.ctm.inverted()) // revert to the identity so we can apply the transform…
-//        ctx.concatenate(flipYAxis) // …then flip the image so the origin is what Canvas2D expects
-//    }
-
-    open override var fillStyle: String {
-        didSet {
-
-        }
+    /// The transform for flipping along the Y axis
+    var flipYAxis: CGAffineTransform {
+        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
     }
 
-    open override var strokeStyle: String {
-        didSet {
-        }
-    }
 
-    open override var shadowColor: String {
-        didSet {
-        }
+    /// Flip vertical since Quartz coordinates have origin at lower-left
+    func resetTransform() {
+        ctx.concatenate(ctx.ctm.inverted()) // revert to the identity so we can apply the transform…
+        ctx.concatenate(flipYAxis) // …then flip the image so the origin is what Canvas2D expects
     }
-
-    open override var shadowBlur: Double {
-        didSet {
-        }
-    }
-
-    open override var shadowOffsetX: Double {
-        didSet {
-        }
-    }
-
-    open override var shadowOffsetY: Double {
-        didSet {
-        }
-    }
+    
+    //open override var font: String {
+    //    didSet {
+    //    }
+    //}
 
     open override var lineCap: String {
         didSet {
@@ -97,24 +79,17 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         set { lineDashInfo.offset = newValue }
     }
 
+    public override func setLineDash(segments: [Double]) {
+        lineDashInfo.segments = segments
+    }
+
+    public override func getLineDash() -> [Double] {
+        lineDashInfo.segments
+    }
+
     open override var miterLimit: Double {
         didSet {
             ctx.setMiterLimit(.init(miterLimit))
-        }
-    }
-
-    open override var font: String {
-        didSet {
-        }
-    }
-
-    open override var textAlign: String {
-        didSet {
-        }
-    }
-
-    open override var textBaseline: String {
-        didSet {
         }
     }
 
@@ -158,8 +133,23 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         }
     }
 
-    open override var imageSmoothingEnabled: Bool {
+    open override var fillStyle: String {
         didSet {
+            if let color = parseColorStyle(css: fillStyle) {
+                ctx.setFillColor(color)
+            } else {
+                ctx.setFillColor(red: 0, green: 0, blue: 0, alpha: 1)
+            }
+        }
+    }
+
+    open override var strokeStyle: String {
+        didSet {
+            if let color = parseColorStyle(css: strokeStyle) {
+                ctx.setStrokeColor(color)
+            } else {
+                ctx.setStrokeColor(red: 0, green: 0, blue: 0, alpha: 1)
+            }
         }
     }
 
@@ -169,14 +159,6 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     
     public override func closePath() {
         ctx.closePath()
-    }
-
-    /// Perform the given block and then re-set the current path
-    private func continuingPath(_ f: () throws -> ()) rethrows {
-        // operations like `fillPath` clears the path, so grab a copy to add it back
-        let path = ctx.path?.copy()
-        try f()
-        if let path = path { ctx.addPath(path) } // continue the current path
     }
 
     public override func rect(x: Double, y: Double, w: Double, h: Double) {
@@ -191,6 +173,20 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         // restore afterwards because “The current path is cleared as a side effect of calling this function"
         continuingPath {
             ctx.strokePath()
+        }
+    }
+
+    public override func fill() {
+        // restore afterwards because “After filling the path, this method clears the context’s current path.”
+        continuingPath {
+            // fillStyle can be a color, gradient or pattern (unsupported)
+//            if let gradient = self.fillStyle as? CanvasGradient {
+//                restoringContext {
+//                    gradient.fill(context: ctx)
+//                }
+//            } else {
+                ctx.fillPath()
+//            }
         }
     }
 
@@ -251,19 +247,23 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
 
     public override func isPointInPath(x: Double, y: Double) -> Bool {
-        ctx.pathContains(CGPoint(x: x, y: y), mode: .fill)
+        #if os(macOS)
+        // TODO: CGContextGetCTM
+        #endif
+        return ctx.pathContains(CGPoint(x: x, y: y), mode: .fill)
     }
 
     public override func isPointInStroke(x: Double, y: Double) -> Bool {
         ctx.pathContains(CGPoint(x: x, y: y), mode: .stroke)
     }
 
-    public override func measureText(value: String) -> TextMetrics? {
-        wip(super.measureText(value: value))
+    public override func setTransform(a: Double, b: Double, c: Double, d: Double, e: Double, f: Double) {
+        resetTransform() // restore the identity (flipped) transform…
+        transform(CGFloat(a), CGFloat(b), CGFloat(c), CGFloat(d), CGFloat(e), CGFloat(f)) // …then apply the new transform
     }
 
-    public override func setTransform(a: Double, b: Double, c: Double, d: Double, e: Double, f: Double) {
-        wip(super.setTransform(a: a, b: b, c: c, d: d, e: e, f: f))
+    func transform(_ a: CGFloat, _ b: CGFloat, _ c: CGFloat, _ d: CGFloat, _ e: CGFloat, _ f: CGFloat) {
+        ctx.concatenate(CGAffineTransform(a: a, b: b, c: c, d: d, tx: e, ty: f))
     }
 
     public override func drawFocusIfNeeded(path: Any, element: Any) {
@@ -278,65 +278,108 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         wip(super.scale(x: x, y: y))
     }
 
-    public override func fill() {
-        wip(super.fill())
+    public override func measureText(value: String) -> TextMetrics? {
+        let astr = NSAttributedString(string: value, attributes: self.textAttributes(stroke: false))
+        return TextMetrics(width: .init(astr.size().width))
     }
 
     public override func fillText(text: String, x: Double, y: Double, maxWidth: Double) {
-        wip(super.fillText(text: text, x: x, y: y, maxWidth: maxWidth))
+        renderText(mode: .fill, text, x, y, maxWidth)
     }
 
     public override func strokeText(text: String, x: Double, y: Double, maxWidth: Double) {
-        wip(super.strokeText(text: text, x: x, y: y, maxWidth: maxWidth))
+        renderText(mode: .stroke, text, x, y, maxWidth)
+    }
+
+    private func renderText(mode: CGTextDrawingMode, _ text: String, _ x: Double, _ y: Double, _ maxWidth: Double) {
+        restoringContext {
+            self.ctx.concatenate(flipYAxis.inverted()) // flip back…
+            var position = CGPoint(x: x, y: y).applying(flipYAxis) // …and re-apply transform to origin
+            let astr = NSAttributedString(string: text, attributes: self.textAttributes(stroke: mode == .stroke))
+            let width = astr.size().width
+
+            switch self.textAlign {
+            case "left": break // nothing to do
+            case "center": position.x -= width / 2
+            case "right": position.x -= width
+            default: break
+            }
+
+            self.ctx.textPosition = position
+            self.ctx.setTextDrawingMode(mode)
+            let line = CTLineCreateWithAttributedString(astr)
+            CTLineDraw(line, self.ctx)
+        }
+    }
+
+    /// Returns the current text attributes for drawing text
+    func textAttributes(stroke: Bool? = nil) -> [NSAttributedString.Key: NSObject] {
+        var attrs: [NSAttributedString.Key: NSObject] = [:]
+
+        if let font = parseFontStyle(css: self.font) {
+            attrs[.font] = font
+        }
+
+        return attrs
     }
 
     public override func ellipse(x: Double, y: Double, radiusX: Double, radiusY: Double, rotation: Double, startAngle: Double, endAngle: Double) {
+        //ctx.addEllipse(in: <#T##CGRect#>)
         wip(super.ellipse(x: x, y: y, radiusX: radiusX, radiusY: radiusY, rotation: rotation, startAngle: startAngle, endAngle: endAngle))
     }
 
     public override func createLinearGradient(x0: Double, y0: Double, x1: Double, y1: Double) -> CanvasGradientAPI? {
-        wip(super.createLinearGradient(x0: x0, y0: y0, x1: x1, y1: y1))
+        wipgrad(super.createLinearGradient(x0: x0, y0: y0, x1: x1, y1: y1))
     }
 
     public override func createConicGradient(startAngle: Double, x: Double, y: Double) -> CanvasGradientAPI? {
-        wip(super.createConicGradient(startAngle: startAngle, x: x, y: y))
+        wipgrad(super.createConicGradient(startAngle: startAngle, x: x, y: y))
     }
 
     public override func createPattern(image: Any, repetition: String) -> CanvasPatternAPI? {
-        wip(super.createPattern(image: image, repetition: repetition))
+        wipgrad(super.createPattern(image: image, repetition: repetition))
     }
 
     public override func createRadialGradient(x0: Double, y0: Double, r0: Double, x1: Double, y1: Double, r1: Double) -> CanvasGradientAPI? {
-        wip(super.createRadialGradient(x0: x0, y0: y0, r0: r0, x1: x1, y1: y1, r1: r1))
+        wipgrad(super.createRadialGradient(x0: x0, y0: y0, r0: r0, x1: x1, y1: y1, r1: r1))
     }
 
     public override func drawImage(image: ImageDataAPI, dx: Double, dy: Double, dWidth: Double, dHeight: Double) {
-        wip(super.drawImage(image: image, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight))
+        wipgrad(super.drawImage(image: image, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight))
     }
 
     public override func createImageData(width: Double, height: Double) -> ImageDataAPI? {
-        wip(super.createImageData(width: width, height: height))
+        wipgrad(super.createImageData(width: width, height: height))
     }
 
     public override func getImageData(sx: Double, sy: Double, sw: Double, sh: Double) -> ImageDataAPI? {
-        wip(super.getImageData(sx: sx, sy: sy, sw: sw, sh: sh))
+        wipgrad(super.getImageData(sx: sx, sy: sy, sw: sw, sh: sh))
+    }
+
+    public override func putImageData(imageData: ImageDataAPI, dx: Double, dy: Double) {
+        wipgrad(super.putImageData(imageData: imageData, dx: dx, dy: dy))
     }
 
     public override func getContextAttributes() -> CanvasRenderingContext2DSettingsAPI? {
         wip(super.getContextAttributes())
     }
 
-    public override func putImageData(imageData: ImageDataAPI, dx: Double, dy: Double) {
-        wip(super.putImageData(imageData: imageData, dx: dx, dy: dy))
+
+    /// Perform the given block and then restore the context
+    private func restoringContext(_ f: () throws -> ()) rethrows {
+        save()
+        defer { restore() }
+        try f()
     }
 
-    public override func setLineDash(segments: [Double]) {
-        wip(super.setLineDash(segments: segments))
+    /// Perform the given block and then re-set the current path
+    private func continuingPath(_ f: () throws -> ()) rethrows {
+        // operations like `fillPath` clears the path, so grab a copy to add it back
+        let path = ctx.path?.copy()
+        try f()
+        if let path = path { ctx.addPath(path) } // continue the current path
     }
 
-    public override func getLineDash() -> [Double] {
-        wip(super.getLineDash())
-    }
 
 }
 
@@ -392,11 +435,11 @@ extension CoreGraphicsCanvas {
 }
 
 
-public class PDFCanvas : CoreGraphicsCanvas {
-    private var outputData: NSMutableData
-    private let graphicsContext: CGContext
+/// A `CoreGraphicsCanvas` subclass that maintains a PDF buffer into which the commands are drawn.
+open class PDFCanvas : CoreGraphicsCanvas {
+    open var outputData: NSMutableData
 
-    enum Errors : Error {
+    public enum Errors : Error {
         case unableToCreateDataConsumer
         case unableToCreatePDFContext
     }
@@ -424,35 +467,89 @@ public class PDFCanvas : CoreGraphicsCanvas {
             throw Errors.unableToCreatePDFContext
         }
 
-        self.graphicsContext = ctx
-        graphicsContext.beginPDFPage(nil)
+        super.init(context: ctx, size: size)
 
-//        NSGraphicsContext.saveGraphicsState()
-//        defer { NSGraphicsContext.restoreGraphicsState() }
-//        NSGraphicsContext.current = NSGraphicsContext(cgContext: cgctx, flipped: false) // use the PDF context for drawing
-
-//        cgctx.beginPDFPage(nil)
-//        self.draw(in: imageRect)
-//        cgctx.endPage()
-//        cgctx.closePDF()
-//
-//        return outputData
-
-
-        super.init(context: ctx)
+        ctx.beginPDFPage(nil)
+        resetTransform()
     }
 
     /// Ends the current PDF context and returns the data. The context should not be used after calling this.
     public func createPDF() -> Data {
-        graphicsContext.endPage()
-        graphicsContext.closePDF()
+        ctx.endPage()
+        ctx.closePDF()
+
         // return PDFDocument(data: outputData as Data)
         return outputData as Data
     }
 }
 
+
+/// A `CoreGraphicsCanvas` subclass that draws into a CGLayer
+open class LayerCanvas : CoreGraphicsCanvas {
+    open var layer: CGLayer
+
+    public enum Errors : Error {
+        case unableToCreateDataConsumer
+        case unableToCreateLayer
+    }
+
+    public required init(size: CGSize) throws {
+        guard let ctx = CGContext(consumer: CGDataConsumer(data: NSMutableData())!, mediaBox: nil, nil) else {
+            throw Errors.unableToCreateDataConsumer
+
+        }
+        guard let layer = CGLayer(ctx, size: size, auxiliaryInfo: nil) else {
+            throw Errors.unableToCreateLayer
+        }
+        self.layer = layer
+
+        super.init(context: ctx, size: size)
+    }
+}
+
+
+// MARK: Utilities
+
 /// Work-in-progress, simply to highlight a line with a deprecation warning
 @available(*, deprecated, message: "work-in-progress")
 fileprivate func wip<T>(_ value: T) -> T { value }
 
+/// Work-in-progress for gradientd, simply to highlight a line with a deprecation warning
+/// - TODO: @available(*, deprecated, message: "work-in-progress")
+fileprivate func wipgrad<T>(_ value: T) -> T { value }
+
 #endif
+
+
+#if canImport(AppKit)
+import AppKit
+
+/// Use WebKit to parse the given attributes; this works well, but is very slow and requires that it be done on the main thread (plus it isn't available on iOS).
+private func parseStyle(key: NSAttributedString.Key, value: String) -> Any? {
+    let cssKey: String
+    switch key {
+    case .font: cssKey = "font"
+    case .foregroundColor: cssKey = "color"
+    case .backgroundColor: cssKey = "background-color"
+    default: cssKey = key.rawValue
+    }
+
+    let html = "<span style='\(cssKey): \(value)'>X</span>"
+    let str = NSAttributedString(html: html.data(using: .utf8) ?? .init(), options: [:], documentAttributes: nil)
+    let attr = str?.attribute(key, at: 0, effectiveRange: nil)
+    print(cssKey, value, "parsed as:", attr)
+    return attr
+}
+
+
+private func parseColorStyle(css string: String) -> CGColor? {
+    (parseStyle(key: .foregroundColor, value: string) as? NSColor)?.cgColor
+}
+
+/// Parse the given font CSS string, caching the results
+private func parseFontStyle(css string: String) -> CTFont? {
+    (parseStyle(key: .font, value: string) as? NSFont)
+}
+
+#endif
+
