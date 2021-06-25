@@ -4,15 +4,12 @@ import MiscKit
 import CoreGraphics
 import CoreText
 
-
-#if os(tvOS)
-extension NSAttributedString {
-    /// Debugging why it is unavailable: https://developer.apple.com/documentation/foundation/nsattributedstring/1528362-size
-    @available(*, deprecated, message: "should be available in tvOS")
-    func size() -> CGSize {
-        return .zero
-    }
-}
+#if os(iOS) || os(tvOS) || os(watchOS)
+import UIKit // NSAttributedString additions
+import MobileCoreServices // needed for kUTTypePNG on iOS
+import ImageIO
+#elseif os(macOS)
+import AppKit
 #endif
 
 /// A `Canvas` implementation that uses the CoreGraphics framework to draw into a destination such as a `CGLayer` or `CGPDFDocument`.
@@ -342,11 +339,9 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     func textAttributes(stroke: Bool? = nil) -> [NSAttributedString.Key: NSObject] {
         var attrs: [NSAttributedString.Key: NSObject] = [:]
 
-        #if !os(tvOS) // FIXME: why doesn't `NSAttributedString` work on tvOS?
         if let font = CSS.parseFontStyle(css: self.font) {
             attrs[NSAttributedString.Key.font] = font
         }
-        #endif
 
         return attrs
     }
@@ -550,9 +545,6 @@ open class LayerCanvas : CoreGraphicsCanvas {
     }
 }
 
-#if os(iOS) || os(tvOS) || os(watchOS)
-import ImageIO
-#endif
 
 extension LayerCanvas {
     /// Creates image data for the canvas in the given format
@@ -566,9 +558,6 @@ extension LayerCanvas {
     }
 }
 
-#if os(iOS) || os(tvOS) || os(watchOS)
-import MobileCoreServices // needed for kUTTypePNG on iOS
-#endif
 
 extension LayerCanvas {
     /// Creates image data for the canvas in PNG format
