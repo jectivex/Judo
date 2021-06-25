@@ -32,9 +32,9 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     /// The transform for flipping along the Y axis
     func flippedYTransform() -> CGAffineTransform {
         #if os(macOS)
-        CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
         #else
-        CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+        return CGAffineTransform.identity
         #endif
     }
 

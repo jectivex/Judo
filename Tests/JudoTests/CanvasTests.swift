@@ -230,10 +230,16 @@ final class CoreGraphicsCanvasTests: XCTestCase {
         XCTAssertEqual(.zero, api.ctx.textPosition)
 
         _ = fillText("", 100, 100, 300)
-        XCTAssertEqual(CGPoint(x: 100, y: 400), api.ctx.textPosition, "draw blank string should position text")
+        #if os(macOS)
+        let y = 400 // NeXTStep!!
+        #else
+        let y = 100 // sane
+        #endif
+
+        XCTAssertEqual(CGPoint(x: 100, y: y), api.ctx.textPosition, "draw blank string should position text")
 
         _ = fillText("PLUGH", 100, 100, 300)
-        XCTAssertNotEqual(CGPoint(x: 100, y: 400), api.ctx.textPosition, "test position should have changed")
+        XCTAssertNotEqual(CGPoint(x: 100, y: y), api.ctx.textPosition, "test position should have changed")
 
         restore()
 

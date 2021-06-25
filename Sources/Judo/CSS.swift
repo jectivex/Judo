@@ -586,6 +586,89 @@ extension CSS {
     }
 
 
+    static func hsl2rgbOLD(h: Double, s: Double, l: Double) -> (r: Double, g: Double, b: Double) {
+        func hueToRGB(m1: Double, m2: Double, h: Double) -> Double {
+            var h = h
+            if (h < 0.0) { h += 1.0 }
+            if (h > 1.0) { h -= 1.0 }
+            if (h < 1.0 / 6.0) { return (m1 + (m2 - m1) * h * 6.0) }
+            if (h < 1.0 / 2.0) { return m2 }
+            if (h < 2.0 / 3.0) { return (m1 + (m2 - m1) * ((2.0 / 3.0) - h) * 6.0) }
+            return m1
+        }
+
+        if s == 0.0 {
+            return (l, l, l)
+        } else {
+            var m2 = 0.0
+            if l <= 0.5 {
+                m2 = l * (1.0 + s)
+            } else {
+                m2 = l + s - l * s
+            }
+
+            let m1 = 2.0 * l - m2
+
+            return (hueToRGB(m1: m1, m2: m2, h: h + (1.0 / 3.0)), hueToRGB(m1: m1, m2: m2, h: h), hueToRGB(m1: m1, m2: m2, h: h - (1.0 / 3.0)))
+        }
+    }
+
+    static func hsl2rgb(h hue: Double, s saturation: Double, l lightness: Double) -> (r: Double, g: Double, b: Double) {
+        let h = hue
+        let s = saturation
+        let l = lightness
+
+        let t2: Double
+        var t3: Double
+        var val: Double
+
+        if (s == 0) {
+            val = l * 255
+            return (val, val, val)
+        }
+
+        if (l < 0.5) {
+            t2 = l * (1 + s)
+        } else {
+            t2 = l + s - l * s
+        }
+
+        let t1 = 2 * l - t2
+
+        var rgb = [0.0, 0.0, 0.0] // the current RGB buffer
+
+        for i in 0..<3 {
+            t3 = h + 1 / 3 * -(Double(i) - 1)
+            if (t3 < 0) {
+                t3 += 1
+            }
+
+            if (t3 > 1) {
+                t3 -= 1
+            }
+
+            if (6 * t3 < 1) {
+                val = t1 + (t2 - t1) * 6 * t3
+            } else if (2 * t3 < 1) {
+                val = t2
+            } else if (3 * t3 < 2) {
+                val = t1 + (t2 - t1) * (2 / 3 - t3) * 6
+            } else {
+                val = t1
+            }
+
+            rgb[i] = val * 255
+        }
+
+        return (rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)
+    }
+}
+
+
+#if canImport(CoreGraphics)
+import CoreGraphics
+
+extension CSS {
     public static func parseColorStyleNative(css string: String) -> CGColor? {
         // first check for a named color
         let css = ColorName(rawValue: string.lowercased())?.hexCode ?? string
@@ -681,87 +764,9 @@ extension CSS {
     }
 
 
-    static func hsl2rgbOLD(h: Double, s: Double, l: Double) -> (r: Double, g: Double, b: Double) {
-        func hueToRGB(m1: Double, m2: Double, h: Double) -> Double {
-            var h = h
-            if (h < 0.0) { h += 1.0 }
-            if (h > 1.0) { h -= 1.0 }
-            if (h < 1.0 / 6.0) { return (m1 + (m2 - m1) * h * 6.0) }
-            if (h < 1.0 / 2.0) { return m2 }
-            if (h < 2.0 / 3.0) { return (m1 + (m2 - m1) * ((2.0 / 3.0) - h) * 6.0) }
-            return m1
-        }
-
-        if s == 0.0 {
-            return (l, l, l)
-        } else {
-            var m2 = 0.0
-            if l <= 0.5 {
-                m2 = l * (1.0 + s)
-            } else {
-                m2 = l + s - l * s
-            }
-
-            let m1 = 2.0 * l - m2
-
-            return (hueToRGB(m1: m1, m2: m2, h: h + (1.0 / 3.0)), hueToRGB(m1: m1, m2: m2, h: h), hueToRGB(m1: m1, m2: m2, h: h - (1.0 / 3.0)))
-        }
-    }
-
-    static func hsl2rgb(h hue: Double, s saturation: Double, l lightness: Double) -> (r: Double, g: Double, b: Double) {
-        let h = hue
-        let s = saturation
-        let l = lightness
-
-        let t2: Double
-        var t3: Double
-        var val: Double
-
-        if (s == 0) {
-            val = l * 255
-            return (val, val, val)
-        }
-
-        if (l < 0.5) {
-            t2 = l * (1 + s)
-        } else {
-            t2 = l + s - l * s
-        }
-
-        let t1 = 2 * l - t2
-
-        var rgb = [0.0, 0.0, 0.0] // the current RGB buffer
-
-        for i in 0..<3 {
-            t3 = h + 1 / 3 * -(Double(i) - 1)
-            if (t3 < 0) {
-                t3 += 1
-            }
-
-            if (t3 > 1) {
-                t3 -= 1
-            }
-
-            if (6 * t3 < 1) {
-                val = t1 + (t2 - t1) * 6 * t3
-            } else if (2 * t3 < 1) {
-                val = t2
-            } else if (3 * t3 < 2) {
-                val = t1 + (t2 - t1) * (2 / 3 - t3) * 6
-            } else {
-                val = t1
-            }
-
-            rgb[i] = val * 255
-        }
-
-        return (rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)
-    }
 }
 
 
-#if canImport(CoreGraphics)
-import CoreGraphics
 import CoreText
 
 #if canImport(AppKit) // exists merely as a reference implementation for test cases
