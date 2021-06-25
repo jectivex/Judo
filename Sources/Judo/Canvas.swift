@@ -94,7 +94,6 @@ public protocol CanvasAPI : AnyObject {
     /// See: [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/imageSmoothingEnabled)
     var imageSmoothingEnabled: Bool { get set }
 
-
     /// Returns a TextMetrics object that contains information about the measured text (such as its width, for example).
     ///
     /// See: [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/measureText)

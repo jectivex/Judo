@@ -15,6 +15,18 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         self.ctx = context
     }
 
+//    /// The transform for flipping along the Y axis
+//    var flipYAxis: CGAffineTransform {
+//        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(height)).scaledBy(x: 1, y: -1)
+//    }
+//
+//
+//    /// Flip vertical since Quartz coordinates have origin at lower-left
+//    private func resetTransform() {
+//        ctx.concatenate(ctx.ctm.inverted()) // revert to the identity so we can apply the transform…
+//        ctx.concatenate(flipYAxis) // …then flip the image so the origin is what Canvas2D expects
+//    }
+
     open override var fillStyle: String {
         didSet {
 
@@ -48,26 +60,46 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     open override var lineCap: String {
         didSet {
+            switch lineCap {
+            case "butt": ctx.setLineCap(.butt)
+            case "round": ctx.setLineCap(.round)
+            case "square": ctx.setLineCap(.square)
+            default: break
+            }
         }
     }
 
     open override var lineJoin: String {
         didSet {
+            switch lineJoin {
+            case "bevel": ctx.setLineJoin(.bevel)
+            case "round": ctx.setLineJoin(.round)
+            case "miter": ctx.setLineJoin(.miter)
+            default: break
+            }
         }
     }
 
     open override var lineWidth: Double {
         didSet {
+            ctx.setLineWidth(.init(lineWidth))
+        }
+    }
+
+    private var lineDashInfo: (segments: [Double], offset: Double) = ([], 0) {
+        didSet {
+            ctx.setLineDash(phase: .init(lineDashInfo.offset), lengths: lineDashInfo.segments.map({ .init($0) }))
         }
     }
 
     open override var lineDashOffset: Double {
-        didSet {
-        }
+        get { lineDashInfo.offset }
+        set { lineDashInfo.offset = newValue }
     }
 
     open override var miterLimit: Double {
         didSet {
+            ctx.setMiterLimit(.init(miterLimit))
         }
     }
 
@@ -88,11 +120,41 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     open override var globalAlpha: Double {
         didSet {
+            ctx.setAlpha(.init(globalAlpha))
         }
     }
 
     open override var globalCompositeOperation: String {
         didSet {
+            switch globalCompositeOperation {
+            case "source-over": ctx.setBlendMode(.normal) // "source over" mode is called `kCGBlendModeNormal'
+            case "source-in": ctx.setBlendMode(.sourceIn)
+            case "source-out": ctx.setBlendMode(.sourceOut)
+            case "source-atop": ctx.setBlendMode(.sourceAtop)
+            case "destination-over": ctx.setBlendMode(.destinationOver)
+            case "destination-in": ctx.setBlendMode(.destinationIn)
+            case "destination-out": ctx.setBlendMode(.destinationOut)
+            case "destination-atop": ctx.setBlendMode(.destinationAtop)
+            case "lighter": ctx.setBlendMode(.lighten)
+            case "copy": ctx.setBlendMode(.copy)
+            case "xor": ctx.setBlendMode(.xor)
+            case "multiply": ctx.setBlendMode(.multiply)
+            case "screen": ctx.setBlendMode(.screen)
+            case "overlay": ctx.setBlendMode(.overlay)
+            case "darken": ctx.setBlendMode(.darken)
+            case "lighten": ctx.setBlendMode(.lighten)
+            case "color-dodge": ctx.setBlendMode(.colorDodge)
+            case "color-burn": ctx.setBlendMode(.colorBurn)
+            case "hard-light": ctx.setBlendMode(.hardLight)
+            case "soft-light": ctx.setBlendMode(.softLight)
+            case "difference": ctx.setBlendMode(.difference)
+            case "exclusion": ctx.setBlendMode(.exclusion)
+            case "hue": ctx.setBlendMode(.hue)
+            case "saturation": ctx.setBlendMode(.saturation)
+            case "color": ctx.setBlendMode(.color)
+            case "luminosity": ctx.setBlendMode(.luminosity)
+            default: break
+            }
         }
     }
 
