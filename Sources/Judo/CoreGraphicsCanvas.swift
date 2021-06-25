@@ -2,6 +2,18 @@ import MiscKit
 
 #if canImport(CoreGraphics)
 import CoreGraphics
+import CoreText
+
+
+#if os(tvOS)
+extension NSAttributedString {
+    /// Debugging why it is unavailable: https://developer.apple.com/documentation/foundation/nsattributedstring/1528362-size
+    @available(*, deprecated, message: "should be available in tvOS")
+    func size() -> CGSize {
+        return .zero
+    }
+}
+#endif
 
 /// A `Canvas` implementation that uses the CoreGraphics framework to draw into a destination such as a `CGLayer` or `CGPDFDocument`.
 ///
@@ -330,9 +342,11 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     func textAttributes(stroke: Bool? = nil) -> [NSAttributedString.Key: NSObject] {
         var attrs: [NSAttributedString.Key: NSObject] = [:]
 
+        #if !os(tvOS) // FIXME: why doesn't `NSAttributedString` work on tvOS?
         if let font = CSS.parseFontStyle(css: self.font) {
-            attrs[.font] = font
+            attrs[NSAttributedString.Key.font] = font
         }
+        #endif
 
         return attrs
     }
@@ -475,17 +489,6 @@ open class PDFCanvas : CoreGraphicsCanvas {
 
 }
 
-#if canImport(PDFKit)
-import PDFKit
-extension PDFCanvas {
-    /// Creates a PDF document from the given data. The context must not be used after calling this.
-    @available(macOS 10.13, iOS 11.0, watchOS 4.0, tvOS 11.0, *)
-    public func createPDFDocument() -> PDFDocument? {
-        PDFDocument(data: finishPDF() as Data)
-    }
-}
-#endif
-
 /// A `CoreGraphicsCanvas` subclass that draws into a CGLayer
 open class LayerCanvas : CoreGraphicsCanvas {
     open var layer: CGLayer
@@ -545,7 +548,13 @@ open class LayerCanvas : CoreGraphicsCanvas {
 
         return bitmapContext.makeImage()
     }
+}
 
+#if os(iOS) || os(tvOS) || os(watchOS)
+import ImageIO
+#endif
+
+extension LayerCanvas {
     /// Creates image data for the canvas in the given format
     func createImageData(type: CFString, size: CGSize, scaleFactor: CGFloat?) -> Data? {
         guard let img = createBitmapImage(size: size, scaleFactor: scaleFactor) else { return nil }

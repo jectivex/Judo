@@ -139,6 +139,14 @@ final class CSSTests : XCTestCase {
 #if canImport(PDFKit)
 import PDFKit
 
+extension PDFCanvas {
+    /// Creates a PDF document from the given data. The context must not be used after calling this.
+    @available(macOS 10.13, iOS 11.0, watchOS 4.0, tvOS 11.0, *)
+    public func createPDFDocument() -> PDFDocument? {
+        PDFDocument(data: finishPDF() as Data)
+    }
+}
+
 final class CoreGraphicsCanvasTests: XCTestCase {
 
     let canvasSize = CGSize(width: 500, height: 500)
