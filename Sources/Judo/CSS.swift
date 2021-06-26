@@ -797,12 +797,14 @@ extension CSS {
     }
 
     public static func parseColorStyle(css string: String) -> CGColor? {
-        parseColorStyleWebKit(css: string)
+        //parseColorStyleWebKit(css: string)
+        parseColorStyleNative(css: string)
     }
 
     /// Parse the given font CSS string, caching the results
     public static func parseFontStyle(css string: String) -> CTFont? {
-        parseFontStyleWebKit(css: string)
+        //parseFontStyleWebKit(css: string)
+        parseFontStyleNative(css: string)
     }
 }
 #else

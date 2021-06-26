@@ -405,7 +405,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 }
 
 extension CoreGraphicsCanvas {
-    fileprivate static func createBitmapContext(width: CGFloat, height: CGFloat, scaleFactor: CGFloat? = nil) -> CGContext? {
+    fileprivate static func createBitmapContext(width: CGFloat, height: CGFloat, scaleFactor: CGFloat = 2.0) -> CGContext? {
         if width <= 0 || !width.isFinite  { return nil }
         if height <= 0 || !height.isFinite { return nil }
 
@@ -414,8 +414,8 @@ extension CoreGraphicsCanvas {
 
         guard let bitmapContext = CGContext(
             data: nil,
-            width: Int(width * (scaleFactor ?? 1)),
-            height: Int(height * (scaleFactor ?? 1)),
+            width: Int(width * scaleFactor),
+            height: Int(height * scaleFactor),
             bitsPerComponent: bitsPerComponent,
             bytesPerRow: 0,
             space: colorSpace,
@@ -423,7 +423,7 @@ extension CoreGraphicsCanvas {
             return nil
         }
 
-        if let scaleFactor = scaleFactor {
+        if scaleFactor != 1.0 {
             bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
         }
 
@@ -523,8 +523,8 @@ open class LayerCanvas : CoreGraphicsCanvas {
     }
 
     /// Renders the current canvas layer into a bitmap image and returns the resulting `CGImage`
-    func createBitmapImage(size: CGSize, scaleFactor: CGFloat?) -> CGImage? {
-        guard let bitmapContext = CoreGraphicsCanvas.createBitmapContext(width: .init(self.size.width) * (scaleFactor ?? 1), height: .init(self.size.height) * (scaleFactor ?? 1), scaleFactor: scaleFactor) else {
+    func createBitmapImage(size: CGSize, scaleFactor: CGFloat = 2.0) -> CGImage? {
+        guard let bitmapContext = CoreGraphicsCanvas.createBitmapContext(width: .init(self.size.width) * scaleFactor, height: .init(self.size.height) * scaleFactor, scaleFactor: scaleFactor) else {
             return nil
         }
 
@@ -534,7 +534,7 @@ open class LayerCanvas : CoreGraphicsCanvas {
             bitmapContext.fill(CGRect(origin: .zero, size: layer.size))
         }
 
-        if let scaleFactor = scaleFactor {
+        if scaleFactor != 1.0 {
             bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
         }
 
@@ -548,7 +548,7 @@ open class LayerCanvas : CoreGraphicsCanvas {
 
 extension LayerCanvas {
     /// Creates image data for the canvas in the given format
-    func createImageData(type: CFString, size: CGSize, scaleFactor: CGFloat?) -> Data? {
+    func createImageData(type: CFString, size: CGSize, scaleFactor: CGFloat = 2.0) -> Data? {
         guard let img = createBitmapImage(size: size, scaleFactor: scaleFactor) else { return nil }
         let data = NSMutableData()
         guard let dest = CGImageDestinationCreateWithData(data as CFMutableData, type, 1, nil) else { return nil }
@@ -561,13 +561,13 @@ extension LayerCanvas {
 
 extension LayerCanvas {
     /// Creates image data for the canvas in PNG format
-    public func createPNGData(scaleFactor: CGFloat? = nil) -> Data? {
-        createImageData(type: kUTTypePNG, size: size, scaleFactor: scaleFactor)
+    public func createPNGData() -> Data? {
+        createImageData(type: kUTTypePNG, size: size)
     }
 
     /// Creates image data for the canvas in JPEG format
-    public func createJPEGData(scaleFactor: CGFloat? = nil) -> Data? {
-        createImageData(type: kUTTypeJPEG, size: size, scaleFactor: scaleFactor)
+    public func createJPEGData() -> Data? {
+        createImageData(type: kUTTypeJPEG, size: size)
     }
 }
 
