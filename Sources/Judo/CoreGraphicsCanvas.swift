@@ -31,6 +31,26 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
         }
     }
 
+    open override var width: Double {
+        get {
+            Double(size.width)
+        }
+
+        set {
+            size.width = CGFloat(size.width)
+        }
+    }
+
+    open override var height: Double {
+        get {
+            Double(size.height)
+        }
+
+        set {
+            size.height = CGFloat(size.height)
+        }
+    }
+
     /// Creates this canvas with the given underlying context and size
     public init(context: CGContext, size: CGSize, backgroundColor: CGColor? = nil) {
         self.ctx = context
@@ -41,12 +61,12 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     /// The transform for flipping along the Y axis
     func flippedYTransform() -> CGAffineTransform {
         #if os(macOS)
-        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height)).scaledBy(x: 1, y: -1)
+        return CGAffineTransform.identity.translatedBy(x: 0, y: .init(self.size.height))
+            .scaledBy(x: 1, y: -1)
         #else
         return CGAffineTransform.identity
         #endif
     }
-
 
     /// Flip vertical since Quartz coordinates have origin at lower-left
     func resetTransform() {
@@ -219,13 +239,13 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     public override func clearRect(x: Double, y: Double, w: Double, h: Double) {
         // When this is a PDF context it draws a black background because: “If the provided context is a window or bitmap context, Core Graphics clears the rectangle. For other context types, Core Graphics fills the rectangle in a device-dependent manner. However, you should not use this function in contexts other than window or bitmap contexts.”
         // ctx.clear(.init(x: x, y: y, width: w, height: h))
-        if let backgroundColor = self.backgroundColor {
-            self.restoringContext {
+        self.restoringContext {
+            if let backgroundColor = self.backgroundColor {
                 ctx.setFillColor(backgroundColor)
                 ctx.fill(.init(x: x, y: y, width: w, height: h))
+            } else {
+                ctx.clear(CGRect(x: x, y: y, width: w, height: h))
             }
-        } else {
-            ctx.clear(CGRect(x: x, y: y, width: w, height: h))
         }
     }
 
@@ -399,8 +419,13 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     private func continuingPath(_ f: () throws -> ()) rethrows {
         // operations like `fillPath` clears the path, so grab a copy to add it back
         let path = ctx.path?.copy()
+        defer {
+            // continue the current path
+            if let path = path {
+                ctx.addPath(path)
+            }
+        }
         try f()
-        if let path = path { ctx.addPath(path) } // continue the current path
     }
 }
 
@@ -423,9 +448,7 @@ extension CoreGraphicsCanvas {
             return nil
         }
 
-        if scaleFactor != 1.0 {
-            bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
-        }
+        bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
 
         return bitmapContext
     }
@@ -493,7 +516,7 @@ open class LayerCanvas : CoreGraphicsCanvas {
         case unableToCreateLayer
     }
 
-    public required init(size: CGSize, content parentContext: CGContext? = nil) throws {
+    public required init(context parentContext: CGContext? = nil, size: CGSize) throws {
         let outputData = NSMutableData()
 
         let rootContext = try parentContext ?? {
@@ -512,6 +535,8 @@ open class LayerCanvas : CoreGraphicsCanvas {
             throw Errors.unableToCreateLayer
         }
 
+        assert(layer.context != rootContext, "CGLayer's context should have differed from root")
+
         guard let ctx = layer.context else {
             throw Errors.unableToCreateLayer
         }
@@ -523,8 +548,8 @@ open class LayerCanvas : CoreGraphicsCanvas {
     }
 
     /// Renders the current canvas layer into a bitmap image and returns the resulting `CGImage`
-    func createBitmapImage(size: CGSize, scaleFactor: CGFloat = 2.0) -> CGImage? {
-        guard let bitmapContext = CoreGraphicsCanvas.createBitmapContext(width: .init(self.size.width) * scaleFactor, height: .init(self.size.height) * scaleFactor, scaleFactor: scaleFactor) else {
+    func createBitmapImage(scaleFactor: CGFloat = 1.0) -> CGImage? {
+        guard let bitmapContext = CoreGraphicsCanvas.createBitmapContext(width: .init(self.size.width), height: .init(self.size.height), scaleFactor: scaleFactor) else {
             return nil
         }
 
@@ -538,6 +563,8 @@ open class LayerCanvas : CoreGraphicsCanvas {
             bitmapContext.scaleBy(x: scaleFactor, y: scaleFactor)
         }
 
+        bitmapContext.concatenate(flippedYTransform())
+
         // draw our layer into the context
         bitmapContext.draw(self.layer, at: .zero)
 
@@ -545,11 +572,10 @@ open class LayerCanvas : CoreGraphicsCanvas {
     }
 }
 
-
 extension LayerCanvas {
     /// Creates image data for the canvas in the given format
-    func createImageData(type: CFString, size: CGSize, scaleFactor: CGFloat = 2.0) -> Data? {
-        guard let img = createBitmapImage(size: size, scaleFactor: scaleFactor) else { return nil }
+    func createImageData(type: CFString, scaleFactor: CGFloat = 2.0) -> Data? {
+        guard let img = createBitmapImage(scaleFactor: scaleFactor) else { return nil }
         let data = NSMutableData()
         guard let dest = CGImageDestinationCreateWithData(data as CFMutableData, type, 1, nil) else { return nil }
         CGImageDestinationAddImage(dest, img, nil)
@@ -558,16 +584,15 @@ extension LayerCanvas {
     }
 }
 
-
 extension LayerCanvas {
     /// Creates image data for the canvas in PNG format
     public func createPNGData() -> Data? {
-        createImageData(type: kUTTypePNG, size: size)
+        createImageData(type: kUTTypePNG)
     }
 
     /// Creates image data for the canvas in JPEG format
     public func createJPEGData() -> Data? {
-        createImageData(type: kUTTypeJPEG, size: size)
+        createImageData(type: kUTTypeJPEG)
     }
 }
 

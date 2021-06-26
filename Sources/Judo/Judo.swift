@@ -21,7 +21,12 @@ public extension JXValue {
     @discardableResult func addFunction(_ name: String, shim: Bool = true, callback: @escaping JXFunction) throws -> JXValue? {
         if !isObject { return nil }
 
-        let fval = JXValue(newFunctionIn: env, callback: callback)
+        //let fval = JXValue(newFunctionIn: env, callback: callback)
+
+        let fval = JXValue(newFunctionIn: env) { ctx, this, args in
+            // dbg(name, args.map(\.stringValue)) // this help debugging canvas drawing calls
+            return try callback(ctx, this, args)
+        }
 
         if !shim {
             self[name] = fval // set the object posing as a function directly

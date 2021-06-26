@@ -8,8 +8,11 @@ import JXKit
 import MiscKit
 
 public protocol CanvasAPI : AnyObject {
-    // var width: Double { get set }
-    // var height: Double { get set }
+    /// The width of the canvas
+    var width: Double { get set }
+
+    /// The height of the canvas
+    var height: Double { get set }
 
     /// The color, gradient, or pattern to use inside shapes.
     ///
@@ -440,8 +443,8 @@ open class Canvas : JXValue {
         }
 
 
-//        addNumber(property: "width", keyPath: \.width)
-//        addNumber(property: "height", keyPath: \.height)
+        addNumber(property: "width", keyPath: \.width)
+        addNumber(property: "height", keyPath: \.height)
 
         addString(property: "fillStyle", keyPath: \.fillStyle)
         addString(property: "font", keyPath: \.font)
@@ -476,17 +479,18 @@ open class Canvas : JXValue {
             }
         }
 
+        func arg(_ args: [JXValue], at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
+        func barg(_ args: [JXValue], at index: Int) -> Bool? { arg(args, at: index)?.booleanValue }
+        func narg(_ args: [JXValue], at index: Int) -> Double { arg(args, at: index)?.numberValue ?? .nan }
+        func sarg(_ args: [JXValue], at index: Int) -> String { arg(args, at: index)?.stringValue ?? "" }
+
         try addFunction("arc", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.arcTo(x1: narg(at: 0), y1: narg(at: 1), x2: narg(at: 2), y2: narg(at: 3), radius: narg(at: 4))
+            delegate.arc(x: narg(args, at: 0), y: narg(args, at: 1), radius: narg(args, at: 2), startAngle: narg(args, at: 3), endAngle: narg(args, at: 4), anticlockwise: !(barg(args, at: 5) ?? false))
             return env.undefined()
         }
 
         try addFunction("arcTo", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.arcTo(x1: narg(at: 0), y1: narg(at: 1), x2: narg(at: 2), y2: narg(at: 3), radius: narg(at: 4))
+            delegate.arcTo(x1: narg(args, at: 0), y1: narg(args, at: 1), x2: narg(args, at: 2), y2: narg(args, at: 3), radius: narg(args, at: 4))
             return env.undefined()
         }
 
@@ -496,16 +500,12 @@ open class Canvas : JXValue {
         }
 
         try addFunction("bezierCurveTo", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.bezierCurveTo(cp1x: narg(at: 0), cp1y: narg(at: 1), cp2x: narg(at: 2), cp2y: narg(at: 3), x: narg(at: 4), y: narg(at: 5))
+            delegate.bezierCurveTo(cp1x: narg(args, at: 0), cp1y: narg(args, at: 1), cp2x: narg(args, at: 2), cp2y: narg(args, at: 3), x: narg(args, at: 4), y: narg(args, at: 5))
             return env.undefined()
         }
 
         try addFunction("clearRect", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.clearRect(x: narg(at: 0), y: narg(at: 1), w: narg(at: 2), h: narg(at: 3))
+            delegate.clearRect(x: narg(args, at: 0), y: narg(args, at: 1), w: narg(args, at: 2), h: narg(args, at: 3))
             return env.undefined()
         }
 
@@ -520,9 +520,7 @@ open class Canvas : JXValue {
         }
 
         try addFunction("ellipse", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.ellipse(x: narg(at: 0), y: narg(at: 1), radiusX: narg(at: 2), radiusY: narg(at: 3), rotation: narg(at: 4), startAngle: narg(at: 5), endAngle: narg(at: 6))
+            delegate.ellipse(x: narg(args, at: 0), y: narg(args, at: 1), radiusX: narg(args, at: 2), radiusY: narg(args, at: 3), rotation: narg(args, at: 4), startAngle: narg(args, at: 5), endAngle: narg(args, at: 6))
             return env.undefined()
         }
 
@@ -532,56 +530,39 @@ open class Canvas : JXValue {
         }
 
         try addFunction("fillRect", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.fillRect(x: narg(at: 0), y: narg(at: 1), w: narg(at: 2), h: narg(at: 3))
+            delegate.fillRect(x: narg(args, at: 0), y: narg(args, at: 1), w: narg(args, at: 2), h: narg(args, at: 3))
             return env.undefined()
         }
 
         try addFunction("fillText", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            func sarg(at index: Int) -> String { arg(at: index)?.stringValue ?? "" }
-            delegate.fillText(text: sarg(at: 0), x: narg(at: 1), y: narg(at: 2), maxWidth: narg(at: 3))
+            delegate.fillText(text: sarg(args, at: 0), x: narg(args, at: 1), y: narg(args, at: 2), maxWidth: narg(args, at: 3))
             return env.undefined()
         }
         try addFunction("isPointInPath", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            return env.boolean(delegate.isPointInPath(x: narg(at: 0), y: narg(at: 1)))
+            return env.boolean(delegate.isPointInPath(x: narg(args, at: 0), y: narg(args, at: 1)))
         }
 
         try addFunction("isPointInStroke", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            return env.boolean(delegate.isPointInStroke(x: narg(at: 0), y: narg(at: 1)))
+            return env.boolean(delegate.isPointInStroke(x: narg(args, at: 0), y: narg(args, at: 1)))
         }
 
         try addFunction("lineTo", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.lineTo(x: narg(at: 0), y: narg(at: 1))
+            delegate.lineTo(x: narg(args, at: 0), y: narg(args, at: 1))
             return env.undefined()
         }
 
         try addFunction("moveTo", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.moveTo(x: narg(at: 0), y: narg(at: 1))
+            delegate.moveTo(x: narg(args, at: 0), y: narg(args, at: 1))
             return env.undefined()
         }
 
         try addFunction("quadraticCurveTo", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.quadraticCurveTo(cpx: narg(at: 0), cpy: narg(at: 1), x: narg(at: 2), y: narg(at: 3))
+            delegate.quadraticCurveTo(cpx: narg(args, at: 0), cpy: narg(args, at: 1), x: narg(args, at: 2), y: narg(args, at: 3))
             return env.undefined()
         }
 
         try addFunction("rect", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.rect(x: narg(at: 0), y: narg(at: 1), w: narg(at: 2), h: narg(at: 3))
+            delegate.rect(x: narg(args, at: 0), y: narg(args, at: 1), w: narg(args, at: 2), h: narg(args, at: 3))
             return env.undefined()
         }
 
@@ -591,9 +572,7 @@ open class Canvas : JXValue {
         }
 
         try addFunction("rotate", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.rotate(angle: narg(at: 0))
+            delegate.rotate(angle: narg(args, at: 0))
             return env.undefined()
         }
 
@@ -603,9 +582,7 @@ open class Canvas : JXValue {
         }
 
         try addFunction("scale", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.scale(x: narg(at: 0), y: narg(at: 1))
+            delegate.scale(x: narg(args, at: 0), y: narg(args, at: 1))
             return env.undefined()
         }
 
@@ -620,9 +597,7 @@ open class Canvas : JXValue {
         }
 
         try addFunction("setTransform", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.setTransform(a: narg(at: 0), b: narg(at: 1), c: narg(at: 2), d: narg(at: 3), e: narg(at: 4), f: narg(at: 5))
+            delegate.setTransform(a: narg(args, at: 0), b: narg(args, at: 1), c: narg(args, at: 2), d: narg(args, at: 3), e: narg(args, at: 4), f: narg(args, at: 5))
             return env.undefined()
         }
 
@@ -632,31 +607,22 @@ open class Canvas : JXValue {
         }
 
         try addFunction("strokeRect", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.strokeRect(x: narg(at: 0), y: narg(at: 1), width: narg(at: 2), height: narg(at: 3))
+            delegate.strokeRect(x: narg(args, at: 0), y: narg(args, at: 1), width: narg(args, at: 2), height: narg(args, at: 3))
             return env.undefined()
         }
 
         try addFunction("strokeText", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            func sarg(at index: Int) -> String { arg(at: index)?.stringValue ?? "" }
-            delegate.strokeText(text: sarg(at: 0), x: narg(at: 1), y: narg(at: 2), maxWidth: narg(at: 3))
+            delegate.strokeText(text: sarg(args, at: 0), x: narg(args, at: 1), y: narg(args, at: 2), maxWidth: narg(args, at: 3))
             return env.undefined()
         }
 
         try addFunction("transform", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.transform(a: narg(at: 0), b: narg(at: 1), c: narg(at: 2), d: narg(at: 3), e: narg(at: 4), f: narg(at: 5))
+            delegate.transform(a: narg(args, at: 0), b: narg(args, at: 1), c: narg(args, at: 2), d: narg(args, at: 3), e: narg(args, at: 4), f: narg(args, at: 5))
             return env.undefined()
         }
 
         try addFunction("translate", shim: shim) { env, this, args in
-            func arg(at index: Int) -> JXValue? { index < args.count ? args[index] : nil }
-            func narg(at index: Int) -> Double { arg(at: index)?.numberValue ?? .nan }
-            delegate.translate(x: narg(at: 0), y: narg(at: 1))
+            delegate.translate(x: narg(args, at: 0), y: narg(args, at: 1))
             return env.undefined()
         }
 
@@ -766,6 +732,9 @@ open class Canvas : JXValue {
 ///
 /// Partial implementations can subclass this class and implement only the parts they need.
 open class AbstractCanvasAPI : CanvasAPI {
+    open var width: Double = 1
+    open var height: Double = 1
+
     open var fillStyle: String = "#000"
     open var strokeStyle: String = "#000"
 

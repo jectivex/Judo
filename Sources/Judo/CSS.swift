@@ -670,11 +670,17 @@ import CoreGraphics
 
 extension CSS {
     public static func parseColorStyleNative(css string: String) -> CGColor? {
-        // first check for a named color
-        let css = ColorName(rawValue: string.lowercased())?.hexCode ?? string
+        let lower = string.lowercased()
+
+        // first check for 'transparent' literal or a CSS named color
+        let css = lower == "transparent" ? "#0000"
+            : (ColorName(rawValue: lower)?.hexCode ?? string)
+
+        //dump(string + " -> " + css, name: "CSS")
 
         func rgba(r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat) -> CGColor? {
-            // return CGColor(red: r, green: g, blue: b, alpha: a)
+            //return CGColor(red: r, green: g, blue: b, alpha: a)
+            //return CGColor(colorSpace: CGColorSpaceCreateDeviceGray(), components: [r, g, b, a])
             return CGColor(colorSpace: CGColorSpaceCreateDeviceRGB(), components: [r, g, b, a])
         }
 
@@ -723,27 +729,18 @@ extension CSS {
             }
         }
 
-
-        if space == "rgb" && comps.count == 3 {
+        if (space == "rgb" || space == "rgba") && comps.count >= 3 {
             guard let r = pbase(comps[0], base: 255),
                 let g = pbase(comps[1], base: 255),
                 let b = pbase(comps[2], base: 255) else {
                 return nil
             }
-            return rgba(r: CGFloat(r), g: CGFloat(g), b: CGFloat(b), a: 1.0)
-        }
 
-        if space == "rgba" && comps.count == 4 {
-            guard let r = pbase(comps[0], base: 255),
-                let g = pbase(comps[1], base: 255),
-                let b = pbase(comps[2], base: 255),
-                let a = pbase(comps[3], base: nil) else {
-                return nil
-            }
+            let a = (comps.count > 3 ? pbase(comps[3], base: nil) : nil) ?? 1.0
             return rgba(r: CGFloat(r), g: CGFloat(g), b: CGFloat(b), a: CGFloat(a))
         }
 
-        if space == "hsl" && comps.count == 3 {
+        if (space == "hsl" || space == "hsla") && comps.count >= 3 {
             guard let h = pbase(comps[0], base: 360),
                 let s = pbase(comps[1], base: 100),
                 let l = pbase(comps[2], base: 100) else {
@@ -751,9 +748,11 @@ extension CSS {
             }
 
             let rgb = hsl2rgb(h: h, s: s, l: l)
-            return rgba(r: CGFloat(rgb.r), g: CGFloat(rgb.g), b: CGFloat(rgb.b), a: 1.0)
+            let a = (comps.count > 3 ? pbase(comps[3], base: nil) : nil) ?? 1.0
+            return rgba(r: CGFloat(rgb.r), g: CGFloat(rgb.g), b: CGFloat(rgb.b), a: CGFloat(a))
         }
 
+        //print("no color for", string)
         return nil
     }
 
