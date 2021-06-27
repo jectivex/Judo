@@ -2,6 +2,7 @@ import JXKit
 import BricBrac
 import MiscKit
 import Dispatch
+import CoreFoundation
 
 #if canImport(FoundationNetworking)
 import FoundationNetworking // needed for networking on Linux
