@@ -108,81 +108,6 @@ public extension JXContext {
     }
 
 
-    /// The function to use to fetch data synchronously
-    typealias DataFetcher = ((_ ctx: JXContext, _ url: String, _ options: Bric?) throws -> (URLResponse?, Data?))
-
-    /// Installs a `fetch` function with the specified data resolver
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-    func installFetch(_ fetcher: @escaping DataFetcher) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-        let fetch = JXValue(newFunctionIn: self) { ctx, this, args in
-            // first arg is string, second arg is array of options
-            guard let url = args.first?.stringValue else {
-                return JXValue(newErrorFromMessage: "first argument to fetch must be set", in: ctx)
-            }
-            let opts: Bric?
-            if let options = args.dropFirst().first, options.isObject {
-                // e.g., method, mode, cache, credentials, headers, reditect, referrerPolicy, body
-                opts = try options.toDecodable(ofType: Bric.self)
-            } else {
-                opts = nil
-            }
-
-            let (response, responseData) = try fetcher(ctx, url, opts)
-
-            var code: Int = 200
-            var encoding: String.Encoding = .utf8
-            if let response = response as? HTTPURLResponse {
-                code = response.statusCode
-                if let encodingName = response.textEncodingName {
-                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // the forced cast is needed on Linux for some reason
-                    if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
-                        switch builtInEncoding {
-                        case .macRoman: encoding = .macOSRoman
-                        case .windowsLatin1: encoding = .isoLatin1
-                        case .isoLatin1: encoding = .isoLatin1
-                        case .nextStepLatin: encoding = .nextstep
-                        case .ASCII: encoding = .ascii
-                        case .unicode: encoding = .unicode
-                        case .UTF8: encoding = .utf8
-                        case .nonLossyASCII: encoding = .nonLossyASCII
-                        case .UTF16BE: encoding = .utf16BigEndian
-                        case .UTF16LE: encoding = .utf16LittleEndian
-                        case .UTF32: encoding = .utf32
-                        case .UTF32BE: encoding = .utf32BigEndian
-                        case .UTF32LE: encoding = .utf32LittleEndian
-                        @unknown default: break
-                        }
-                    }
-                }
-            }
-
-            guard let data = responseData else {
-                return JXValue(newPromiseRejectedWithResult: JXValue(newErrorFromMessage: "could not load data", in: ctx), in: ctx) ?? ctx.undefined()
-            }
-            //dbg("fetched data from url:", url, "size:", data.count)
-
-
-            // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#body
-            let result = try ctx.encode(Bric.obj(["ok": .bol(code >= 200 && code < 300), "status": .num(.init(code))]))
-
-            result["body"] = ctx.data(data)
-
-            // vg.load uses response.text() to extract the info, so just set that to a string
-            result["text"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
-                if let string = String(data: data, encoding: encoding) {
-                    return ctx.string(string)
-                } else {
-                    return ctx.undefined()
-                }
-            }
-
-            return JXValue(newPromiseResolvedWithResult: result, in: ctx) ?? ctx.undefined()
-        }
-
-        self.global["fetch"] = fetch
-    }
-    
     /// Installs `setTimeout` to use `DispatchQueue.global.asyncAfter` with the `default` QoS.
     /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
     func installTimer(immediate: Bool = false, scheduler: @escaping (Double, DispatchWorkItem) -> () = JXContext.dispatchScheduler(qos: .default)) {
@@ -271,7 +196,7 @@ public extension JXContext {
 
         globalTimeouts.deleteProperty(JXValue(double: Double(key), in: self))
         //globalTimeouts = JXValue(undefinedIn: self)
-        
+
         // now execute the callback function with `false` (which means cancel)
         if callback.isFunction {
             // clear the timeout from the array
@@ -323,6 +248,85 @@ public extension JXContext {
             global["__globalTimeoutsCounter"] = JXValue(double: Double(newValue), in: self)
         }
     }
+
 }
 
-private var globalTimerQueue = DispatchQueue(label: "globalTimers")
+// MARK: Fetch
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+public extension JXContext {
+
+    /// The function to use to fetch data synchronously
+    typealias DataFetchHandler = ((_ ctx: JXContext, _ url: String, _ options: Bric?) throws -> (URLResponse?, Data?))
+
+    /// Installs a `fetch` function with the specified data resolver
+    func installFetch(_ fetcher: @escaping DataFetchHandler) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+        let fetch = JXValue(newFunctionIn: self) { ctx, this, args in
+            // first arg is string, second arg is array of options
+            guard let url = args.first?.stringValue else {
+                return JXValue(newErrorFromMessage: "first argument to fetch must be set", in: ctx)
+            }
+            let opts: Bric?
+            if let options = args.dropFirst().first, options.isObject {
+                // e.g., method, mode, cache, credentials, headers, reditect, referrerPolicy, body
+                opts = try options.toDecodable(ofType: Bric.self)
+            } else {
+                opts = nil
+            }
+
+            let (response, responseData) = try fetcher(ctx, url, opts)
+
+            var code: Int = 200
+            var encoding: String.Encoding = .utf8
+            if let response = response as? HTTPURLResponse {
+                code = response.statusCode
+                if let encodingName = response.textEncodingName {
+                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // the forced cast is needed on Linux for some reason
+                    if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
+                        switch builtInEncoding {
+                        case .macRoman: encoding = .macOSRoman
+                        case .windowsLatin1: encoding = .isoLatin1
+                        case .isoLatin1: encoding = .isoLatin1
+                        case .nextStepLatin: encoding = .nextstep
+                        case .ASCII: encoding = .ascii
+                        case .unicode: encoding = .unicode
+                        case .UTF8: encoding = .utf8
+                        case .nonLossyASCII: encoding = .nonLossyASCII
+                        case .UTF16BE: encoding = .utf16BigEndian
+                        case .UTF16LE: encoding = .utf16LittleEndian
+                        case .UTF32: encoding = .utf32
+                        case .UTF32BE: encoding = .utf32BigEndian
+                        case .UTF32LE: encoding = .utf32LittleEndian
+                        @unknown default: break
+                        }
+                    }
+                }
+            }
+
+            guard let data = responseData else {
+                return JXValue(newPromiseRejectedWithResult: JXValue(newErrorFromMessage: "could not load data", in: ctx), in: ctx) ?? ctx.undefined()
+            }
+            //dbg("fetched data from url:", url, "size:", data.count)
+
+
+            // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#body
+            let result = try ctx.encode(Bric.obj(["ok": .bol(code >= 200 && code < 300), "status": .num(.init(code))]))
+
+            result["body"] = ctx.data(data)
+
+            // vg.load uses response.text() to extract the info, so just set that to a string
+            result["text"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+                if let string = String(data: data, encoding: encoding) {
+                    return ctx.string(string)
+                } else {
+                    return ctx.undefined()
+                }
+            }
+
+            return JXValue(newPromiseResolvedWithResult: result, in: ctx) ?? ctx.undefined()
+        }
+
+        self.global["fetch"] = fetch
+    }
+}
