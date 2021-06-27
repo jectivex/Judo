@@ -50,7 +50,22 @@ final class JudoTests: XCTestCase {
         do {
             let ctx = JXDebugContext()
             XCTAssertEqual(1, JXDebugContext.debugContextCount)
+            let _ = ctx
         }
+    }
+
+    func testFetch() throws {
+        let ctx = JXDebugContext()
+        // bogus fetch that returns the string as the data
+        ctx.installFetch { ctx, url, opts in (nil, url.data(using: .utf8)) }
+        // ctx["fetch"].call(withArguments: [ctx.string("ABC")])
+
+        let str = "QRS"
+        let _ = try ctx.eval("(async () => { this['fetchResult'] = await fetch('\(str)'); })();")
+        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        XCTAssertEqual("true", ctx["fetchResult"]["ok"].stringValue)
+        XCTAssertEqual(200, ctx["fetchResult"]["status"].numberValue)
+        XCTAssertEqual(str, ctx["fetchResult"]["text"].call().stringValue)
     }
 
     func testCallbackFunctions() throws {

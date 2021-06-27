@@ -259,7 +259,11 @@ public extension JXContext {
     /// The function to use to fetch data synchronously
     typealias DataFetchHandler = ((_ ctx: JXContext, _ url: String, _ options: Bric?) throws -> (URLResponse?, Data?))
 
-    /// Installs a `fetch` function with the specified data resolver
+    /// Installs a `fetch` function with the specified data resolver.
+    /// This a partial, basic, and synchronous.
+    ///
+    /// – SeeAlso: [MDN Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+    /// – SeeAlso: [MDN Response](https://developer.mozilla.org/en-US/docs/Web/API/Response)
     func installFetch(_ fetcher: @escaping DataFetchHandler) {
         // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
         let fetch = JXValue(newFunctionIn: self) { ctx, this, args in
@@ -283,7 +287,7 @@ public extension JXContext {
                 code = response.statusCode
                 if let encodingName = response.textEncodingName {
                     let stringEncoding: CFStringEncoding
-                    
+
                     #if os(Linux) || os(Windows)
                     stringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // or else: "error: 'String' is not convertible to 'CFString'"
                     #else
