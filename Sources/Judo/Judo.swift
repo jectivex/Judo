@@ -282,7 +282,14 @@ public extension JXContext {
             if let response = response as? HTTPURLResponse {
                 code = response.statusCode
                 if let encodingName = response.textEncodingName {
-                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as CFString))
+                    let stringEncoding: CFStringEncoding
+                    
+                    #if os(Linux) || os(Windows)
+                    stringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // or else: "error: 'String' is not convertible to 'CFString'"
+                    #else
+                    stringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as CFString))
+                    #endif
+
                     if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
                         switch builtInEncoding {
                         case .macRoman: encoding = .macOSRoman
@@ -326,19 +333,21 @@ public extension JXContext {
                 }
             }
 
-            
-//            result["json"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
-//                dbg("calling json for url:", url, "size:", data.count)
-//                do {
-//                    if let string = String(data: data, encoding: encoding) {
-//                        return try ctx.encode(Bric.parse(string))
-//                    } else {
-//                        return ctx.undefined()
-//                    }
-//                } catch {
-//                    return ctx.undefined()
-//                }
-//            }
+
+            // we could do the JSON parsing ourselves, but it is less efficient than doing it in JS-land, and vg falls back from a missing 'json()' to using 'text()' with: `isFunction(response[type]) ? response[type](  ) : response.text()`
+
+            //result["json"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+            //    dbg("calling json for url:", url, "size:", data.count)
+            //    do {
+            //        if let string = String(data: data, encoding: encoding) {
+            //            return try ctx.encode(Bric.parse(string))
+            //        } else {
+            //            return ctx.undefined()
+            //        }
+            //    } catch {
+            //        return ctx.undefined()
+            //    }
+            //}
 
             result["arrayBuffer"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
                 dbg("calling arrayBuffer for url:", url, "size:", data.count)
