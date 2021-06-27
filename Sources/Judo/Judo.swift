@@ -128,7 +128,7 @@ public extension JXContext {
                 opts = nil
             }
 
-            let (response, data) = try fetcher(ctx, url, opts)
+            let (response, responseData) = try fetcher(ctx, url, opts)
 
             var code: Int = 200
             var encoding: String.Encoding = .utf8
@@ -157,7 +157,7 @@ public extension JXContext {
                 }
             }
 
-            guard let data = data else {
+            guard let data = responseData else {
                 return JXValue(newPromiseRejectedWithResult: JXValue(newErrorFromMessage: "could not load data", in: ctx), in: ctx) ?? ctx.undefined()
             }
             //dbg("fetched data from url:", url, "size:", data.count)
