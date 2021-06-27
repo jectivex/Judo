@@ -330,3 +330,4 @@ public extension JXContext {
         self.global["fetch"] = fetch
     }
 }
+
