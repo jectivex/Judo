@@ -282,7 +282,7 @@ public extension JXContext {
             if let response = response as? HTTPURLResponse {
                 code = response.statusCode
                 if let encodingName = response.textEncodingName {
-                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // the forced cast is needed on Linux for some reason
+                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as CFString))
                     if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
                         switch builtInEncoding {
                         case .macRoman: encoding = .macOSRoman
@@ -305,9 +305,10 @@ public extension JXContext {
             }
 
             guard let data = responseData else {
+                dbg("no data from url:", url)
                 return JXValue(newPromiseRejectedWithResult: JXValue(newErrorFromMessage: "could not load data", in: ctx), in: ctx) ?? ctx.undefined()
             }
-            //dbg("fetched data from url:", url, "size:", data.count)
+            dbg("fetched data from url:", url, "size:", data.count)
 
 
             // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#body
@@ -317,12 +318,38 @@ public extension JXContext {
 
             // vg.load uses response.text() to extract the info, so just set that to a string
             result["text"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+                dbg("calling text for url:", url, "size:", data.count)
                 if let string = String(data: data, encoding: encoding) {
                     return ctx.string(string)
                 } else {
                     return ctx.undefined()
                 }
             }
+
+            
+//            result["json"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+//                dbg("calling json for url:", url, "size:", data.count)
+//                do {
+//                    if let string = String(data: data, encoding: encoding) {
+//                        return try ctx.encode(Bric.parse(string))
+//                    } else {
+//                        return ctx.undefined()
+//                    }
+//                } catch {
+//                    return ctx.undefined()
+//                }
+//            }
+
+            result["arrayBuffer"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+                dbg("calling arrayBuffer for url:", url, "size:", data.count)
+                return ctx.data(data)
+            }
+
+            result["blob"] = JXValue(newFunctionIn: ctx) { ctx, this, args in
+                dbg("calling blob for url:", url, "size:", data.count)
+                return ctx.data(data)
+            }
+
 
             return JXValue(newPromiseResolvedWithResult: result, in: ctx) ?? ctx.undefined()
         }

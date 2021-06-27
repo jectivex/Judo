@@ -7,6 +7,10 @@
 import JXKit
 import MiscKit
 
+/// Work-in-progress for UIKit
+/// - TODO: @available(*, deprecated, message: "UIKit work in progress")
+@discardableResult @inlinable public func wipcanvas<T>(_ x: T) -> T { x }
+
 public protocol CanvasAPI : AnyObject {
     /// The width of the canvas
     var width: Double { get set }
@@ -628,47 +632,56 @@ open class Canvas : JXValue {
 
         try addFunction("createConicGradient", shim: shim) { env, this, args in
             let f = delegate.createConicGradient
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("createImageData", shim: shim) { env, this, args in
             let f = delegate.createImageData
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("createLinearGradient", shim: shim) { env, this, args in
             let f = delegate.createLinearGradient
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("createPattern", shim: shim) { env, this, args in
             let f = delegate.createPattern
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("createRadialGradient", shim: shim) { env, this, args in
             let f = delegate.createRadialGradient
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("drawFocusIfNeeded", shim: shim) { env, this, args in
             let f = delegate.drawFocusIfNeeded
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("drawImage", shim: shim) { env, this, args in
             let f = delegate.drawImage
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
 
         try addFunction("getContextAttributes", shim: shim) { env, this, args in
             let f = delegate.getContextAttributes
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
         try addFunction("getImageData", shim: shim) { env, this, args in
             let f = delegate.getImageData
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
@@ -676,12 +689,14 @@ open class Canvas : JXValue {
 
         try addFunction("getTransform", shim: shim) { env, this, args in
             let f = delegate.getTransform
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
 
         try addFunction("putImageData", shim: shim) { env, this, args in
             let f = delegate.putImageData
+            let _ = wipcanvas(f)
             return env.undefined()
         }
 
