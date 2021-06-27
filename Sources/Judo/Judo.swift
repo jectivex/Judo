@@ -279,6 +279,9 @@ public extension JXContext {
                 opts = nil
             }
 
+            dbg("fetch request for:", url, "opts:", opts)
+
+            
             let (response, responseData) = try fetcher(ctx, url, opts)
 
             var code: Int = 200

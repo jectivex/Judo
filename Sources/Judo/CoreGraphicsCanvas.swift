@@ -310,15 +310,15 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
 
     public override func drawFocusIfNeeded(path: Any, element: Any) {
-        wip(super.drawFocusIfNeeded(path: path, element: element))
+        wipcanvas(super.drawFocusIfNeeded(path: path, element: element))
     }
 
     public override func getTransform() -> DOMMatrixAPI? {
-        wip(super.getTransform())
+        wipcanvas(super.getTransform())
     }
 
     public override func scale(x: Double, y: Double) {
-        wip(super.scale(x: x, y: y))
+        wipcanvas(super.scale(x: x, y: y))
     }
 
     public override func measureText(value: String) -> TextMetrics? {
@@ -368,7 +368,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
 
     public override func ellipse(x: Double, y: Double, radiusX: Double, radiusY: Double, rotation: Double, startAngle: Double, endAngle: Double) {
         //ctx.addEllipse(in: <#T##CGRect#>)
-        wip(super.ellipse(x: x, y: y, radiusX: radiusX, radiusY: radiusY, rotation: rotation, startAngle: startAngle, endAngle: endAngle))
+        wipcanvas(super.ellipse(x: x, y: y, radiusX: radiusX, radiusY: radiusY, rotation: rotation, startAngle: startAngle, endAngle: endAngle))
     }
 
     public override func createLinearGradient(x0: Double, y0: Double, x1: Double, y1: Double) -> CanvasGradientAPI? {
@@ -404,7 +404,7 @@ open class CoreGraphicsCanvas : AbstractCanvasAPI {
     }
 
     public override func getContextAttributes() -> CanvasRenderingContext2DSettingsAPI? {
-        wip(super.getContextAttributes())
+        wipcanvas(super.getContextAttributes())
     }
 
 

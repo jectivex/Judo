@@ -8,7 +8,7 @@ import JXKit
 import MiscKit
 
 /// Work-in-progress for UIKit
-/// - TODO: @available(*, deprecated, message: "UIKit work in progress")
+/// - TODO: @available(*, deprecated, message: "Canvas work in progress")
 @discardableResult @inlinable public func wipcanvas<T>(_ x: T) -> T { x }
 
 public protocol CanvasAPI : AnyObject {
