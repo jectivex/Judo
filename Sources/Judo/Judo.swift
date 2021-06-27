@@ -2,7 +2,7 @@ import JXKit
 import BricBrac
 import MiscKit
 import Dispatch
-import CoreFoundation
+import Foundation // needed for String->CFString on Linux
 
 #if canImport(FoundationNetworking)
 import FoundationNetworking // needed for networking on Linux
