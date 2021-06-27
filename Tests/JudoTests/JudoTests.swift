@@ -57,16 +57,19 @@ final class JudoTests: XCTestCase {
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testFetch() throws {
         let ctx = JXDebugContext()
-        // bogus fetch that returns the string as the data
+        // bogus fetch that just returns the string itself
         ctx.installFetch { ctx, url, opts in (nil, url.data(using: .utf8)) }
-        // ctx["fetch"].call(withArguments: [ctx.string("ABC")])
 
-        let str = "QRS"
-        let _ = try ctx.eval("(async () => { this['fetchResult'] = await fetch('\(str)'); })();")
+
+        let checkString = UUID().uuidString
+        let promise = try ctx.eval("(async () => { this['fetchResult'] = await fetch('\(checkString)'); })();")
+        XCTAssertEqual("[object Promise]", promise.stringValue)
+
+        let result = ctx["fetchResult"]
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        XCTAssertEqual("true", ctx["fetchResult"]["ok"].stringValue)
-        XCTAssertEqual(200, ctx["fetchResult"]["status"].numberValue)
-        XCTAssertEqual(str, ctx["fetchResult"]["text"].call().stringValue)
+        XCTAssertEqual("true", result["ok"].stringValue)
+        XCTAssertEqual(200, result["status"].numberValue)
+        XCTAssertEqual(checkString, result["text"].call().stringValue)
     }
 
     func testCallbackFunctions() throws {
