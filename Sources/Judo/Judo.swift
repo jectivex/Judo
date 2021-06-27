@@ -2,7 +2,7 @@ import JXKit
 import BricBrac
 import MiscKit
 import Dispatch
-import Foundation // needed for String->CFString on Linux
+import Foundation
 
 #if canImport(FoundationNetworking)
 import FoundationNetworking // needed for networking on Linux
@@ -134,7 +134,7 @@ public extension JXContext {
             if let response = response as? HTTPURLResponse {
                 code = response.statusCode
                 if let encodingName = response.textEncodingName {
-                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding(encodingName as CFString)
+                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding(encodingName as! CFString)
                     if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
                         switch builtInEncoding {
                         case .macRoman: encoding = .macOSRoman
