@@ -54,6 +54,7 @@ final class JudoTests: XCTestCase {
         }
     }
 
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testFetch() throws {
         let ctx = JXDebugContext()
         // bogus fetch that returns the string as the data
