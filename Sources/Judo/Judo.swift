@@ -3,6 +3,10 @@ import BricBrac
 import MiscKit
 import Dispatch
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking // needed for networking on Linux
+#endif
+
 public enum JudoErrors : Error {
     /// The URL could not be found in the resources
     case cannotLoadScriptURL
