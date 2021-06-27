@@ -135,7 +135,7 @@ public extension JXContext {
             if let response = response as? HTTPURLResponse {
                 code = response.statusCode
                 if let encodingName = response.textEncodingName {
-                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding(encodingName as! CFString)
+                    let stringEncoding: CFStringEncoding = CFStringConvertIANACharSetNameToEncoding((encodingName as! CFString)) // the forced cast is needed on Linux for some reason
                     if let builtInEncoding = CFStringBuiltInEncodings(rawValue: stringEncoding) {
                         switch builtInEncoding {
                         case .macRoman: encoding = .macOSRoman
