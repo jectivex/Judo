@@ -68,13 +68,13 @@ jobs:
 
   macOS11:
     runs-on: macos-11
-    needs: [macOS10] # Linux must pass first
+    needs: [macOS10] # linux must pass first
     steps:
       - uses: actions/checkout@v2
-      - name: Test (Debug)
+      - name: test (debug)
         run: swift test -v --configuration debug
-      - name: Test (Release)
-        run: swift test -v --configuration release -Xswiftc -enable-testing
+      - name: test (release)
+        run: swift test -v --configuration release -xswiftc -enable-testing
 
   Windows10:
     if: false # JavaScriptCore not available on Windows
